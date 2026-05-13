@@ -3,6 +3,7 @@ import { streamChat, parseSSEStream } from "@/lib/deepseek";
 import { buildSystemPrompt, buildGeneratePrompt } from "@/lib/prompt";
 import { postProcessHtml } from "@/lib/html-template";
 import type { ThemeId } from "@/types";
+import { getThemeStyle } from "@/types";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const systemPrompt = buildSystemPrompt();
+    const style = getThemeStyle(theme);
+    const systemPrompt = buildSystemPrompt(style);
     const userPrompt = buildGeneratePrompt(sourceText, theme, slideCount);
 
     const apiStream = await streamChat([

@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const systemPrompt = buildSystemPrompt();
+    const isSwiss = currentHtml.includes("--accent:") && currentHtml.includes("--grey-1:");
+    const systemPrompt = buildSystemPrompt(isSwiss ? "b" : "a");
     const userPrompt = buildEditPrompt(currentHtml, instruction);
 
     const messages: { role: "system" | "user" | "assistant"; content: string }[] = [

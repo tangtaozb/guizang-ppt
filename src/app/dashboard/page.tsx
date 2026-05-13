@@ -5,16 +5,22 @@ import { useRouter } from "next/navigation";
 import { getProjects, deleteProject } from "@/lib/storage";
 import { useEditorStore } from "@/stores/editor";
 import { UserCenter } from "@/components/user-center";
-import { THEMES } from "@/types";
-import type { StoredProject, ThemeId } from "@/types";
+import { THEMES, THEMES_A, THEMES_B } from "@/types";
+import type { StoredProject, ThemeId, Theme } from "@/types";
 
-const THEME_COLORS: Record<string, { ink: string; paper: string }> = {
-  "ink-classic": { ink: "#0a0a0b", paper: "#f1efea" },
-  indigo: { ink: "#0a1f3d", paper: "#f1f3f5" },
-  forest: { ink: "#1a2e1f", paper: "#f5f1e8" },
-  kraft: { ink: "#2a1e13", paper: "#eedfc7" },
-  dune: { ink: "#1f1a14", paper: "#f0e6d2" },
-};
+function getCardColors(themeId: string): { bg: string; text: string } {
+  const t = THEMES.find((th) => th.id === themeId);
+  if (!t) return { bg: "#0a0a0b", text: "#f1efea" };
+  if (t.style === "b" && t.accent) {
+    return { bg: t.accent, text: t.accentOn || "#ffffff" };
+  }
+  return { bg: t.ink, text: t.paper };
+}
+
+function getThemeDot(t: Theme): string {
+  if (t.style === "b" && t.accent) return t.accent;
+  return t.ink;
+}
 
 const EXAMPLE_TEMPLATES = [
   { id: "ex1", title: "年度商业计划书", tag: "商业", color: "#0a1f3d" },
@@ -93,7 +99,7 @@ function AllProjectsModal({
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {projects.map((p) => {
-              const tc = THEME_COLORS[p.theme] || THEME_COLORS["ink-classic"];
+              const tc = getCardColors(p.theme);
               return (
                 <div
                   key={p.id}
@@ -102,18 +108,18 @@ function AllProjectsModal({
                 >
                   <div
                     className="h-28 flex items-center justify-center relative"
-                    style={{ backgroundColor: tc.ink }}
+                    style={{ backgroundColor: tc.bg }}
                   >
                     <span
                       className="text-sm font-serif font-bold px-4 text-center leading-snug"
-                      style={{ color: tc.paper }}
+                      style={{ color: tc.text }}
                     >
                       {p.title}
                     </span>
                     {p.slideCount > 0 && (
                       <span
                         className="absolute bottom-2 right-3 text-[10px] font-mono opacity-50"
-                        style={{ color: tc.paper }}
+                        style={{ color: tc.text }}
                       >
                         {p.slideCount} 页
                       </span>
@@ -224,7 +230,7 @@ export default function DashboardPage() {
                   ) : (
                     <span
                       className="w-4 h-4 rounded-full border border-border/50"
-                      style={{ backgroundColor: THEMES.find((t) => t.id === selectedTheme)?.ink }}
+                      style={{ backgroundColor: getThemeDot(THEMES.find((t) => t.id === selectedTheme)!) }}
                     />
                   )}
                   <span className="text-muted-foreground">
@@ -239,7 +245,7 @@ export default function DashboardPage() {
                 {showThemePicker && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowThemePicker(false)} />
-                    <div className="absolute bottom-full left-0 mb-2 w-44 bg-white rounded-xl border border-border shadow-lg z-20 py-1 overflow-hidden">
+                    <div className="absolute left-0 top-full mt-2 w-48 bg-white rounded-xl border border-border shadow-lg z-20 py-1 max-h-[340px] overflow-y-auto">
                       <button
                         onClick={() => { setSelectedTheme("auto"); setShowThemePicker(false); }}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${
@@ -249,7 +255,10 @@ export default function DashboardPage() {
                         <span className="w-4 h-4 rounded-full bg-gradient-to-br from-gray-800 via-blue-900 to-amber-900 shrink-0" />
                         自动（AI 推荐）
                       </button>
-                      {THEMES.map((t) => (
+                      <div className="px-3 pt-2.5 pb-1">
+                        <span className="text-[10px] font-medium text-muted-foreground/70 tracking-wider uppercase">Style A · 电子墨水</span>
+                      </div>
+                      {THEMES_A.map((t) => (
                         <button
                           key={t.id}
                           onClick={() => { setSelectedTheme(t.id); setShowThemePicker(false); }}
@@ -257,7 +266,22 @@ export default function DashboardPage() {
                             selectedTheme === t.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
                           }`}
                         >
-                          <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: t.ink }} />
+                          <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: t.ink }} />
+                          {t.name}
+                        </button>
+                      ))}
+                      <div className="px-3 pt-2.5 pb-1 border-t border-border/40 mt-1">
+                        <span className="text-[10px] font-medium text-muted-foreground/70 tracking-wider uppercase">Style B · 瑞士风格</span>
+                      </div>
+                      {THEMES_B.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => { setSelectedTheme(t.id); setShowThemePicker(false); }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${
+                            selectedTheme === t.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
+                          }`}
+                        >
+                          <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: t.accent }} />
                           {t.name}
                         </button>
                       ))}
@@ -295,7 +319,7 @@ export default function DashboardPage() {
             </div>
             <div className="grid grid-cols-5 gap-3">
               {displayProjects.map((p) => {
-                const tc = THEME_COLORS[p.theme] || THEME_COLORS["ink-classic"];
+                const tc = getCardColors(p.theme);
                 return (
                   <div
                     key={p.id}
@@ -304,18 +328,18 @@ export default function DashboardPage() {
                   >
                     <div
                       className="aspect-[16/10] flex items-center justify-center relative"
-                      style={{ backgroundColor: tc.ink }}
+                      style={{ backgroundColor: tc.bg }}
                     >
                       <span
                         className="text-xs font-serif font-bold px-3 text-center leading-snug line-clamp-2"
-                        style={{ color: tc.paper }}
+                        style={{ color: tc.text }}
                       >
                         {p.title}
                       </span>
                       {p.slideCount > 0 && (
                         <span
                           className="absolute bottom-1.5 right-2 text-[10px] font-mono opacity-50"
-                          style={{ color: tc.paper }}
+                          style={{ color: tc.text }}
                         >
                           {p.slideCount} 页
                         </span>
