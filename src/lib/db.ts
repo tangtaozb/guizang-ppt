@@ -155,28 +155,38 @@ export async function dbConsumeCredits(data: {
 
 // ── Intent Recognition ──
 
-const EDIT_PATTERNS = /^(换成|改为|改成|加上|添加|删除|删掉|去掉|移除|修改|增加|减少|调整|替换|更换|缩小|放大|加粗|加一|减一|移到|挪到|设为|设置|把.{1,10}(改|换|变|调|设|删|加|去|移)|每.{0,4}(页|张|slide)|重新生成|字体|颜色|背景|标题|正文|页眉|页脚|间距|边距|对齐|居中|靠左|靠右|主题|风格|布局|排版|动画)/;
+// Action verbs / design terms at start of message → strong edit signal
+const EDIT_START = /^(换成|改为|改成|加上|添加|删除|删掉|去掉|移除|修改|增加|减少|调整|替换|更换|缩小|放大|加粗|加一|减一|移到|挪到|设为|设置|改一|改下|弄成|做成|变成|换一|换个|加个|来个|重做|重新|把.{1,10}(改|换|变|调|设|删|加|去|移)|用.{0,4}(替换|替代|代替)|每.{0,4}(页|张|slide)|字体|颜色|背景|标题|正文|页眉|页脚|间距|边距|对齐|居中|靠左|靠右|主题|风格|布局|排版|动画)/;
 
-const CHAT_PATTERNS = /^(这个|请问|为什么|怎么|什么|是否|有没有|是不是|能不能|可以吗|多少|几个|几页|哪个|哪些|介绍|解释|说明|你觉得|你认为|建议|帮我看|帮我想|分析|评价|好不好|对吗|行吗)/;
+// Design/PPT terms anywhere in message → moderate edit signal
+const EDIT_KEYWORDS = /(字体|颜色|配色|背景色?|标题|副标题|正文|页眉|页脚|间距|边距|对齐|居中|靠左|靠右|主题|风格|布局|排版|动画|图片|图标|[Ll][Oo][Gg][Oo]|幻灯片|[Pp][Pp][Tt]|[Ss]lide|第.{1,3}[页张]|封面页?|目录页?|结尾页?)/;
+
+// Conversational starters
+const CHAT_PATTERNS = /^(这个|请问|为什么|怎么|什么|是否|有没有|是不是|能不能|可以吗|多少|几个|几页|哪个|哪些|介绍|解释|说明|你觉得|你认为|建议|帮我看|帮我想|分析|评价|好不好|对吗|行吗|今天|你好|谢谢|好的|嗯|哦|知道|明白|告诉|说说|聊聊|讲讲|想问|想知道|有什么|有哪些|推荐|觉得|感觉|看看|帮忙|谁|哪里|哪儿|怎样)/;
+
+// Question-like sentence endings (without explicit ?)
+const QUESTION_ENDING = /(?:怎么样|如何|是什么|什么意思|吗|呢|嘛|啥|没有|不是|行不行|好不好|对不对|可不可以|好吗|对吗|行吗)$/;
 
 export type Intent = "edit" | "chat";
 
 export function classifyIntent(message: string): Intent {
   const trimmed = message.trim();
 
-  // Questions ending with ? are usually chat
-  if (trimmed.endsWith("？") || trimmed.endsWith("?")) {
-    // Unless it's a rhetorical instruction like "能不能换个颜色？"
-    if (EDIT_PATTERNS.test(trimmed)) return "edit";
-    return "chat";
-  }
+  // 1. Starts with edit action verb / design term → edit
+  if (EDIT_START.test(trimmed)) return "edit";
 
-  // Explicit edit patterns
-  if (EDIT_PATTERNS.test(trimmed)) return "edit";
+  // 2. Ends with question mark → chat
+  if (trimmed.endsWith("？") || trimmed.endsWith("?")) return "chat";
 
-  // Explicit chat patterns
+  // 3. Ends with question-like particle (怎么样、吗、呢…) → chat
+  if (QUESTION_ENDING.test(trimmed)) return "chat";
+
+  // 4. Contains PPT/design keywords anywhere → edit
+  if (EDIT_KEYWORDS.test(trimmed)) return "edit";
+
+  // 5. Starts with conversational pattern → chat
   if (CHAT_PATTERNS.test(trimmed)) return "chat";
 
-  // Default: treat as edit instruction (primary use case)
-  return "edit";
+  // 6. Default: chat (safer — real edit commands always have recognizable keywords)
+  return "chat";
 }

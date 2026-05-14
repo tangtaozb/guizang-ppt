@@ -279,7 +279,9 @@ export default function EditorPage() {
     appendMessage(
       createMessage(
         "user",
-        `基于以下内容生成 PPT：\n${sourceText.slice(0, 200)}${sourceText.length > 200 ? "..." : ""}`
+        sourceText.length > 100
+          ? sourceText.slice(0, 100) + "..."
+          : sourceText
       )
     );
     appendMessage(createMessage("assistant", "正在分析内容并生成演示文稿..."));
