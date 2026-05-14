@@ -1,158 +1,192 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
   const router = useRouter();
+  const supabase = createClient();
+
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
-  const [sending, setSending] = useState(false);
-  const [verifying, setVerifying] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
 
-  const startCountdown = () => {
-    setCountdown(60);
-    const timer = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1000);
-  };
+  // Countdown timer
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
 
   const handleSendCode = async () => {
-    if (!email || !email.includes("@")) {
+    if (!email.trim() || !email.includes("@")) {
       setError("请输入有效的邮箱地址");
       return;
     }
+    if (loading) return;
+    setLoading(true);
     setError("");
-    setSending(true);
-    try {
-      const res = await fetch("/api/auth/send-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "发送失败");
-      setStep("code");
-      startCountdown();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "发送验证码失败，请重试");
-    } finally {
-      setSending(false);
+
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: true },
+    });
+
+    if (err) {
+      setError(
+        err.message.includes("rate")
+          ? "发送太频繁，请稍后再试"
+          : `发送失败：${err.message}`
+      );
+      setLoading(false);
+      return;
     }
+
+    setStep("code");
+    setCountdown(60);
+    setLoading(false);
   };
 
   const handleVerify = async () => {
-    if (code.length !== 6) {
-      setError("请输入 6 位验证码");
+    if (code.length < 6 || loading) return;
+    setLoading(true);
+    setError("");
+
+    const { error: err } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: "email",
+    });
+
+    if (err) {
+      setError(
+        err.message.includes("expired") || err.message.includes("invalid")
+          ? "验证码错误或已过期，请重新发送"
+          : `验证失败：${err.message}`
+      );
+      setLoading(false);
       return;
     }
-    setError("");
-    setVerifying(true);
-    try {
-      const res = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "验证失败");
-      router.push("/dashboard");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "验证码错误，请重试");
-    } finally {
-      setVerifying(false);
-    }
+
+    router.push("/dashboard");
+    router.refresh();
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-muted">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#fafafa]">
       <div className="w-full max-w-sm">
+        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold tracking-tight">
             GuiZang<span className="text-accent">PPT</span>
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
-            {step === "email" ? "输入邮箱开始使用" : `验证码已发送至 ${email}`}
+            AI 杂志风演示文稿生成器
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-border p-6 shadow-sm">
-          {step === "email" ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">邮箱地址</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
-                  placeholder="you@example.com"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                  autoFocus
-                />
-              </div>
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              <button
-                onClick={handleSendCode}
-                disabled={sending}
-                className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {sending ? "发送中..." : "获取验证码"}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">验证码</label>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-                  placeholder="输入 6 位验证码"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm text-center tracking-[0.5em] font-mono focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                  autoFocus
-                />
-              </div>
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              <button
-                onClick={handleVerify}
-                disabled={verifying}
-                className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {verifying ? "验证中..." : "登录"}
-              </button>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <button
-                  onClick={() => { setStep("email"); setCode(""); setError(""); }}
-                  className="hover:text-foreground transition-colors"
-                >
-                  更换邮箱
-                </button>
-                <button
-                  onClick={handleSendCode}
-                  disabled={countdown > 0 || sending}
-                  className="hover:text-foreground transition-colors disabled:opacity-50"
-                >
-                  {countdown > 0 ? `${countdown}s 后重发` : "重新发送"}
-                </button>
-              </div>
+        {/* Card */}
+        <div className="bg-white rounded-2xl border border-border shadow-sm p-6">
+          <h2 className="text-base font-semibold mb-5">邮箱登录</h2>
+
+          {error && (
+            <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 text-red-600 text-xs">
+              {error}
             </div>
           )}
+
+          <div className="space-y-4">
+            {/* Email */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                邮箱地址
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && step === "email" && handleSendCode()
+                }
+                placeholder="your@email.com"
+                disabled={step === "code"}
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent disabled:bg-muted/50 disabled:text-muted-foreground"
+                autoFocus
+              />
+            </div>
+
+            {step === "email" ? (
+              <button
+                onClick={handleSendCode}
+                disabled={!email.trim() || loading}
+                className="w-full py-2.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {loading ? "发送中..." : "发送验证码"}
+              </button>
+            ) : (
+              <>
+                {/* Code */}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                    验证码
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={code}
+                    onChange={(e) =>
+                      setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    onKeyDown={(e) => e.key === "Enter" && handleVerify()}
+                    placeholder="输入 6 位验证码"
+                    maxLength={6}
+                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm text-center tracking-[0.5em] font-mono focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                    autoFocus
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    验证码已发送至 {email}
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleVerify}
+                  disabled={code.length < 6 || loading}
+                  className="w-full py-2.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {loading ? "验证中..." : "登录"}
+                </button>
+
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => {
+                      setStep("email");
+                      setCode("");
+                      setError("");
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    ← 修改邮箱
+                  </button>
+                  <button
+                    onClick={handleSendCode}
+                    disabled={countdown > 0 || loading}
+                    className="text-xs text-accent hover:underline disabled:text-muted-foreground disabled:no-underline"
+                  >
+                    {countdown > 0 ? `${countdown}s 后重发` : "重新发送"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          登录即表示同意我们的服务条款和隐私政策
+        <p className="text-center text-[11px] text-muted-foreground/60 mt-6">
+          首次登录将自动注册并赠送 100 积分
         </p>
       </div>
     </div>

@@ -6,15 +6,14 @@ import Link from "next/link";
 import { useEditorStore } from "@/stores/editor";
 import type { ProjectVersion } from "@/types";
 import { exportPptx } from "@/lib/export-pptx";
+import { countSlides } from "@/lib/storage";
 import {
-  getProject,
-  createProject,
-  updateProject,
-  addVersion,
-  countSlides,
-  consumeCredits,
-  saveMessages,
-} from "@/lib/storage";
+  dbCreateProject,
+  dbGetProject,
+  dbSaveAfterGeneration,
+  dbConsumeCredits,
+  classifyIntent,
+} from "@/lib/db";
 import { UserCenter } from "@/components/user-center";
 
 async function consumeSSE(
@@ -177,14 +176,15 @@ export default function EditorPage() {
   const abortRef = useRef<AbortController | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Load existing project
+  // Load existing project from Supabase
   useEffect(() => {
     if (isNew) {
       if (!sourceText) reset();
       return;
     }
-    const project = getProject(paramId);
-    if (project) {
+    let cancelled = false;
+    dbGetProject(paramId).then((project) => {
+      if (cancelled) return;
       setHtml(project.currentHtml);
       setTheme(project.theme);
       setSourceText(project.sourceText);
@@ -197,7 +197,11 @@ export default function EditorPage() {
         setCurrentVersionId(project.versions[project.versions.length - 1].id);
       }
       setShowSourceInput(!project.currentHtml);
-    }
+    }).catch(() => {
+      // Fallback: project not found in Supabase
+      setShowSourceInput(true);
+    });
+    return () => { cancelled = true; };
   }, [paramId, isNew, reset, setHtml, setTheme, setSourceText, setProjectTitle, setMessages]);
 
   const autoGenRef = useRef(false);
@@ -213,17 +217,7 @@ export default function EditorPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Persist messages to localStorage when generation finishes
-  const prevGenerating = useRef(false);
-  useEffect(() => {
-    if (prevGenerating.current && !isGenerating) {
-      const pid = projectId || useEditorStore.getState().projectId;
-      if (pid) {
-        saveMessages(pid, useEditorStore.getState().messages);
-      }
-    }
-    prevGenerating.current = isGenerating;
-  }, [isGenerating, projectId]);
+  // Messages are now saved to Supabase via dbSaveAfterGeneration in saveVersion()
 
   const createMessage = useCallback(
     (role: "user" | "assistant", content: string) => ({
@@ -237,10 +231,10 @@ export default function EditorPage() {
     [projectId]
   );
 
-  const ensureProject = useCallback((): string => {
+  const ensureProject = useCallback(async (): Promise<string> => {
     if (projectId) return projectId;
     const title = sourceText.slice(0, 20).replace(/\n/g, " ") || "未命名演示";
-    const project = createProject({ title, theme, sourceText });
+    const project = await dbCreateProject({ title, theme, sourceText });
     setProjectId(project.id);
     setProjectTitle(title);
     router.replace(`/editor/${project.id}`, { scroll: false });
@@ -248,12 +242,21 @@ export default function EditorPage() {
   }, [projectId, sourceText, theme, router, setProjectTitle]);
 
   const saveVersion = useCallback(
-    (pid: string, html: string, label: string) => {
-      const v = addVersion(pid, html, label);
+    async (pid: string, html: string, label: string) => {
+      const storeMessages = useEditorStore.getState().messages;
       const sc = countSlides(html);
-      updateProject(pid, { slideCount: sc });
-      setVersions((prev) => [...prev, v]);
-      setCurrentVersionId(v.id);
+      try {
+        const result = await dbSaveAfterGeneration(pid, {
+          html,
+          label,
+          messages: storeMessages.map((m) => ({ role: m.role, content: m.content })),
+          slideCount: sc,
+        });
+        setVersions((prev) => [...prev, result.version]);
+        setCurrentVersionId(result.version.id);
+      } catch (e) {
+        console.error("保存版本失败:", e);
+      }
     },
     []
   );
@@ -299,11 +302,16 @@ export default function EditorPage() {
         () => {
           updateLastAssistantMessage("正在生成中...");
         },
-        (html) => {
+        async (html) => {
           setHtml(html);
-          const pid = ensureProject();
+          const pid = await ensureProject();
           saveVersion(pid, html, "初次生成");
-          consumeCredits(10, "生成演示文稿", projectTitle || "未命名演示", "generate");
+          dbConsumeCredits({
+            amount: 10,
+            description: "生成演示文稿",
+            projectTitle: projectTitle || "未命名演示",
+            type: "generate",
+          }).catch(() => {});
           updateLastAssistantMessage(
             "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
           );
@@ -330,61 +338,124 @@ export default function EditorPage() {
     const userMsg = input.trim();
     setInput("");
 
+    const intent = classifyIntent(userMsg);
+
     appendMessage(createMessage("user", userMsg));
-    appendMessage(createMessage("assistant", "正在修改..."));
     setGenerating(true);
 
     const ac = new AbortController();
     abortRef.current = ac;
 
-    try {
-      const chatHistory = messages
-        .filter((m) => m.role === "user" || m.role === "assistant")
-        .map((m) => ({ role: m.role, content: m.content }));
+    const chatHistory = messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content }));
 
-      const res = await fetch("/api/projects/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentHtml,
-          instruction: userMsg,
-          chatHistory,
-        }),
-        signal: ac.signal,
-      });
+    if (intent === "chat") {
+      // ── Discussion / Q&A flow (no HTML modification) ──
+      appendMessage(createMessage("assistant", ""));
+      try {
+        const res = await fetch("/api/projects/discuss", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: userMsg, currentHtml, chatHistory }),
+          signal: ac.signal,
+        });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "修改失败");
-      }
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "对话失败");
+        }
 
-      await consumeSSE(
-        res,
-        () => {
-          updateLastAssistantMessage("正在修改中...");
-        },
-        (html) => {
-          setHtml(html);
-          if (projectId) {
-            saveVersion(projectId, html, `修改：${userMsg.slice(0, 30)}`);
-            consumeCredits(5, `编辑：${userMsg.slice(0, 20)}`, projectTitle || "未命名演示", "edit");
+        const reader = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let sseBuffer = "";
+        let fullReply = "";
+
+        while (true) {
+          if (ac.signal.aborted) { reader.cancel(); return; }
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          sseBuffer += decoder.decode(value, { stream: true });
+          const lines = sseBuffer.split("\n");
+          sseBuffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith("data: ")) continue;
+            try {
+              const data = JSON.parse(trimmed.slice(6));
+              if (data.type === "delta") {
+                fullReply += data.content;
+                updateLastAssistantMessage(fullReply);
+              } else if (data.type === "done") {
+                // finished
+              }
+            } catch { /* skip */ }
           }
-          updateLastAssistantMessage(`已完成修改：${userMsg}`);
-          setGenerating(false);
-          abortRef.current = null;
-        },
-        (error) => {
-          updateLastAssistantMessage(`修改失败：${error}`);
-          setGenerating(false);
-          abortRef.current = null;
-        },
-        ac.signal
-      );
-    } catch (e: unknown) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      updateLastAssistantMessage(`修改失败：${e instanceof Error ? e.message : "未知错误"}`);
-      setGenerating(false);
-      abortRef.current = null;
+        }
+
+        setGenerating(false);
+        abortRef.current = null;
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        updateLastAssistantMessage(`对话失败：${e instanceof Error ? e.message : "未知错误"}`);
+        setGenerating(false);
+        abortRef.current = null;
+      }
+    } else {
+      // ── Edit flow (HTML modification) ──
+      appendMessage(createMessage("assistant", "正在修改..."));
+      try {
+        const res = await fetch("/api/projects/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentHtml,
+            instruction: userMsg,
+            chatHistory,
+          }),
+          signal: ac.signal,
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "修改失败");
+        }
+
+        await consumeSSE(
+          res,
+          () => {
+            updateLastAssistantMessage("正在修改中...");
+          },
+          (html) => {
+            setHtml(html);
+            if (projectId) {
+              saveVersion(projectId, html, `修改：${userMsg.slice(0, 30)}`);
+              dbConsumeCredits({
+                amount: 5,
+                description: `编辑：${userMsg.slice(0, 20)}`,
+                projectTitle: projectTitle || "未命名演示",
+                type: "edit",
+              }).catch(() => {});
+            }
+            updateLastAssistantMessage(`已完成修改：${userMsg}`);
+            setGenerating(false);
+            abortRef.current = null;
+          },
+          (error) => {
+            updateLastAssistantMessage(`修改失败：${error}`);
+            setGenerating(false);
+            abortRef.current = null;
+          },
+          ac.signal
+        );
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        updateLastAssistantMessage(`修改失败：${e instanceof Error ? e.message : "未知错误"}`);
+        setGenerating(false);
+        abortRef.current = null;
+      }
     }
   };
 

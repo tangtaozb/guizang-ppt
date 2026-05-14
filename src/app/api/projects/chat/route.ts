@@ -1,11 +1,15 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { streamChat, parseSSEStream } from "@/lib/deepseek";
 import { buildSystemPrompt, buildEditPrompt } from "@/lib/prompt";
 import { postProcessHtml } from "@/lib/html-template";
+import { getAuthUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   try {
     const { currentHtml, instruction, chatHistory } = (await req.json()) as {
       currentHtml: string;

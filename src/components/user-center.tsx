@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { getUserProfile, updateUserNickname } from "@/lib/storage";
-import type { UserProfile, CreditRecord } from "@/types";
+import { useRouter } from "next/navigation";
+import { dbGetUser, dbUpdateNickname, dbGetCredits } from "@/lib/db";
+import type { DbUserProfile } from "@/lib/db";
+import type { CreditRecord } from "@/types";
+import { createClient } from "@/lib/supabase-browser";
 
 const PLAN_LABELS: Record<string, string> = {
   free: "免费版",
@@ -23,16 +26,22 @@ function formatDate(iso: string) {
 
 const PAGE_SIZE = 8;
 
-function CreditHistoryModal({
-  records,
-  onClose,
-}: {
-  records: CreditRecord[];
-  onClose: () => void;
-}) {
+function CreditHistoryModal({ onClose }: { onClose: () => void }) {
   const [page, setPage] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
-  const paged = records.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const [totalPages, setTotalPages] = useState(1);
+  const [records, setRecords] = useState<CreditRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    dbGetCredits(page, PAGE_SIZE)
+      .then((data) => {
+        setRecords(data.records);
+        setTotalPages(data.totalPages);
+      })
+      .catch(() => setRecords([]))
+      .finally(() => setLoading(false));
+  }, [page]);
 
   return createPortal(
     <div
@@ -52,11 +61,13 @@ function CreditHistoryModal({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-3">
-          {records.length === 0 ? (
+          {loading ? (
+            <p className="text-sm text-muted-foreground text-center py-8">加载中...</p>
+          ) : records.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">暂无记录</p>
           ) : (
             <div className="space-y-0.5">
-              {paged.map((r) => (
+              {records.map((r) => (
                 <div key={r.id} className="flex items-start justify-between py-2.5 border-b border-border/50 last:border-0">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.description}</p>
@@ -105,20 +116,21 @@ function CreditHistoryModal({
 }
 
 export function UserCenter() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<DbUserProfile | null>(null);
   const [editing, setEditing] = useState(false);
   const [nickname, setNickname] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setProfile(getUserProfile());
+    dbGetUser().then(setProfile).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    setProfile(getUserProfile());
+    dbGetUser().then(setProfile).catch(() => {});
   }, [open]);
 
   useEffect(() => {
@@ -132,9 +144,9 @@ export function UserCenter() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const handleSaveNickname = () => {
+  const handleSaveNickname = async () => {
     if (nickname.trim()) {
-      const updated = updateUserNickname(nickname.trim());
+      const updated = await dbUpdateNickname(nickname.trim());
       setProfile(updated);
     }
     setEditing(false);
@@ -189,7 +201,7 @@ export function UserCenter() {
                       </button>
                     </div>
                   )}
-                  <p className="text-xs text-muted-foreground mt-0.5">{profile.phone}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{profile.email || profile.phone}</p>
                 </div>
               </div>
             </div>
@@ -219,6 +231,20 @@ export function UserCenter() {
                 </svg>
                 积分消耗记录
               </button>
+              <button
+                onClick={async () => {
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  router.push("/login");
+                  router.refresh();
+                }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors text-red-500"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                </svg>
+                退出登录
+              </button>
             </div>
           </div>
         )}
@@ -226,7 +252,6 @@ export function UserCenter() {
 
       {showHistory && (
         <CreditHistoryModal
-          records={profile.creditHistory}
           onClose={() => setShowHistory(false)}
         />
       )}

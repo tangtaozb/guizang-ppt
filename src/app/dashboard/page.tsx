@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getProjects, deleteProject } from "@/lib/storage";
 import { useEditorStore } from "@/stores/editor";
 import { UserCenter } from "@/components/user-center";
 import { THEMES, THEMES_A, THEMES_B } from "@/types";
-import type { StoredProject, ThemeId, Theme } from "@/types";
+import type { ThemeId, Theme } from "@/types";
+import { dbGetProjects, dbDeleteProject } from "@/lib/db";
+import type { DbProjectListItem } from "@/lib/db";
 
 function getCardColors(themeId: string): { bg: string; text: string } {
   const t = THEMES.find((th) => th.id === themeId);
@@ -74,7 +75,7 @@ function AllProjectsModal({
   onDelete,
   onClose,
 }: {
-  projects: StoredProject[];
+  projects: DbProjectListItem[];
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
@@ -129,7 +130,6 @@ function AllProjectsModal({
                     <h3 className="font-medium text-xs truncate">{p.title}</h3>
                     <p className="text-[10px] text-muted-foreground mt-1">
                       {new Date(p.updatedAt).toLocaleDateString("zh-CN")}
-                      {p.versions.length > 0 && ` · ${p.versions.length} 个版本`}
                     </p>
                   </div>
                   <button
@@ -152,7 +152,7 @@ function AllProjectsModal({
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<StoredProject[]>([]);
+  const [projects, setProjects] = useState<DbProjectListItem[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [inputText, setInputText] = useState("");
@@ -161,7 +161,9 @@ export default function DashboardPage() {
   const { setSourceText, setTheme, reset } = useEditorStore();
 
   useEffect(() => {
-    setProjects(getProjects());
+    dbGetProjects()
+      .then(setProjects)
+      .catch(() => setProjects([]));
   }, []);
 
   const handleSubmit = () => {
@@ -179,9 +181,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    deleteProject(id);
-    setProjects(getProjects());
+  const handleDelete = async (id: string) => {
+    await dbDeleteProject(id);
+    const updated = await dbGetProjects();
+    setProjects(updated);
     setDeleteTarget(null);
   };
 
