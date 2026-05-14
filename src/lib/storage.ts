@@ -1,4 +1,4 @@
-import type { StoredProject, ProjectVersion, UserProfile, CreditRecord, ThemeId } from "@/types";
+import type { StoredProject, ProjectVersion, ChatMessage, UserProfile, CreditRecord, ThemeId } from "@/types";
 
 const PROJECTS_KEY = "guizang_projects";
 const USER_KEY = "guizang_user";
@@ -41,6 +41,7 @@ export function createProject(data: {
     sourceText: data.sourceText,
     currentHtml: "",
     versions: [],
+    messages: [],
     slideCount: 0,
     createdAt: now,
     updatedAt: now,
@@ -86,6 +87,14 @@ export function countSlides(html: string): number {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
   return doc.querySelectorAll(".slide").length;
+}
+
+export function saveMessages(projectId: string, messages: ChatMessage[]) {
+  const projects = getProjects();
+  const idx = projects.findIndex((p) => p.id === projectId);
+  if (idx === -1) return;
+  projects[idx].messages = messages;
+  saveProjects(projects);
 }
 
 // ── User Profile ──

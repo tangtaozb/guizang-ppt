@@ -21,6 +21,8 @@ function formatDate(iso: string) {
   });
 }
 
+const PAGE_SIZE = 8;
+
 function CreditHistoryModal({
   records,
   onClose,
@@ -28,6 +30,10 @@ function CreditHistoryModal({
   records: CreditRecord[];
   onClose: () => void;
 }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
+  const paged = records.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   return createPortal(
     <div
       className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-6"
@@ -49,9 +55,9 @@ function CreditHistoryModal({
           {records.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">暂无记录</p>
           ) : (
-            <div className="space-y-3">
-              {records.map((r) => (
-                <div key={r.id} className="flex items-start justify-between py-2 border-b border-border/50 last:border-0">
+            <div className="space-y-0.5">
+              {paged.map((r) => (
+                <div key={r.id} className="flex items-start justify-between py-2.5 border-b border-border/50 last:border-0">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.description}</p>
                     {r.projectTitle && (
@@ -71,6 +77,27 @@ function CreditHistoryModal({
             </div>
           )}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-border">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              上一页
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {page + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              下一页
+            </button>
+          </div>
+        )}
       </div>
     </div>,
     document.body

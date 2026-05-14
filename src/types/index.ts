@@ -104,6 +104,7 @@ export interface StoredProject {
   sourceText: string;
   currentHtml: string;
   versions: ProjectVersion[];
+  messages: ChatMessage[];
   slideCount: number;
   createdAt: string;
   updatedAt: string;

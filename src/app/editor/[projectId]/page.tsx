@@ -13,6 +13,7 @@ import {
   addVersion,
   countSlides,
   consumeCredits,
+  saveMessages,
 } from "@/lib/storage";
 import { UserCenter } from "@/components/user-center";
 
@@ -155,6 +156,7 @@ export default function EditorPage() {
     projectTitle,
     setHtml,
     setTheme,
+    setMessages,
     appendMessage,
     updateLastAssistantMessage,
     setGenerating,
@@ -188,12 +190,15 @@ export default function EditorPage() {
       setSourceText(project.sourceText);
       setProjectTitle(project.title);
       setVersions(project.versions);
+      if (project.messages && project.messages.length > 0) {
+        setMessages(project.messages);
+      }
       if (project.versions.length > 0) {
         setCurrentVersionId(project.versions[project.versions.length - 1].id);
       }
       setShowSourceInput(!project.currentHtml);
     }
-  }, [paramId, isNew, reset, setHtml, setTheme, setSourceText, setProjectTitle]);
+  }, [paramId, isNew, reset, setHtml, setTheme, setSourceText, setProjectTitle, setMessages]);
 
   const autoGenRef = useRef(false);
   useEffect(() => {
@@ -207,6 +212,18 @@ export default function EditorPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Persist messages to localStorage when generation finishes
+  const prevGenerating = useRef(false);
+  useEffect(() => {
+    if (prevGenerating.current && !isGenerating) {
+      const pid = projectId || useEditorStore.getState().projectId;
+      if (pid) {
+        saveMessages(pid, useEditorStore.getState().messages);
+      }
+    }
+    prevGenerating.current = isGenerating;
+  }, [isGenerating, projectId]);
 
   const createMessage = useCallback(
     (role: "user" | "assistant", content: string) => ({
