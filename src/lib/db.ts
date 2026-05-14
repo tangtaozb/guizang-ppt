@@ -169,6 +169,18 @@ const QUESTION_ENDING = /(?:怎么样|如何|是什么|什么意思|吗|呢|嘛|
 
 export type Intent = "edit" | "chat";
 
+// Stricter check for dashboard/homepage input — only treat as chat if very clearly conversational
+// (avoids misclassifying short topic phrases like "AI的发展历史" as chat)
+export function isSourceTextChat(message: string): boolean {
+  const trimmed = message.trim();
+  if (trimmed.length > 50) return false; // long text → always treat as PPT source
+  if (EDIT_START.test(trimmed) || EDIT_KEYWORDS.test(trimmed)) return false;
+  if (trimmed.endsWith("？") || trimmed.endsWith("?")) return true;
+  if (QUESTION_ENDING.test(trimmed)) return true;
+  if (CHAT_PATTERNS.test(trimmed)) return true;
+  return false;
+}
+
 export function classifyIntent(message: string): Intent {
   const trimmed = message.trim();
 

@@ -13,6 +13,7 @@ import {
   dbSaveAfterGeneration,
   dbConsumeCredits,
   classifyIntent,
+  isSourceTextChat,
 } from "@/lib/db";
 import { UserCenter } from "@/components/user-center";
 
@@ -171,6 +172,7 @@ export default function EditorPage() {
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [showVersions, setShowVersions] = useState(false);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const justCreatedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -180,6 +182,12 @@ export default function EditorPage() {
   useEffect(() => {
     if (isNew) {
       if (!sourceText) reset();
+      return;
+    }
+    // Skip loading if we just created this project via ensureProject() —
+    // local state is already correct, and loading now would race with saveVersion()
+    if (justCreatedRef.current) {
+      justCreatedRef.current = false;
       return;
     }
     let cancelled = false;
@@ -209,7 +217,14 @@ export default function EditorPage() {
     if (isNew && sourceText && !currentHtml && !isGenerating && !autoGenRef.current) {
       autoGenRef.current = true;
       setShowSourceInput(false);
-      handleGenerate();
+
+      if (isSourceTextChat(sourceText)) {
+        // User asked a question from homepage, not PPT source material
+        handleSendMessage(sourceText);
+        setSourceText("");
+      } else {
+        handleGenerate();
+      }
     }
   });
 
@@ -237,6 +252,7 @@ export default function EditorPage() {
     const project = await dbCreateProject({ title, theme, sourceText });
     setProjectId(project.id);
     setProjectTitle(title);
+    justCreatedRef.current = true; // prevent loading effect from overwriting local state
     router.replace(`/editor/${project.id}`, { scroll: false });
     return project.id;
   }, [projectId, sourceText, theme, router, setProjectTitle]);
@@ -335,10 +351,10 @@ export default function EditorPage() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isGenerating) return;
-    const userMsg = input.trim();
-    setInput("");
+  const handleSendMessage = async (directMsg?: string) => {
+    const userMsg = directMsg || input.trim();
+    if (!userMsg || isGenerating) return;
+    if (!directMsg) setInput("");
 
     const intent = classifyIntent(userMsg);
 
