@@ -140,11 +140,11 @@ export default function LoginPage() {
                     inputMode="numeric"
                     value={code}
                     onChange={(e) =>
-                      setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                      setCode(e.target.value.replace(/\D/g, "").slice(0, 8))
                     }
                     onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-                    placeholder="输入 6 位验证码"
-                    maxLength={6}
+                    placeholder="输入验证码"
+                    maxLength={8}
                     className="w-full px-3 py-2.5 border border-border rounded-lg text-sm text-center tracking-[0.5em] font-mono focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     autoFocus
                   />
