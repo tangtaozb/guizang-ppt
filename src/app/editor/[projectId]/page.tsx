@@ -669,7 +669,7 @@ export default function EditorPage() {
                   </button>
                 ) : (
                   <button
-                    onClick={handleSendMessage}
+                    onClick={() => handleSendMessage()}
                     disabled={!input.trim()}
                     className="shrink-0 w-9 h-9 flex items-center justify-center bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-30"
                   >
