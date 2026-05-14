@@ -164,7 +164,7 @@ export default function EditorPage() {
   } = useEditorStore();
 
   const [input, setInput] = useState("");
-  const [showSourceInput, setShowSourceInput] = useState(isNew && !currentHtml);
+  const [showSourceInput, setShowSourceInput] = useState(isNew && !currentHtml && !sourceText);
   const [isComposing, setIsComposing] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(isNew ? null : paramId);
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
@@ -554,7 +554,7 @@ export default function EditorPage() {
                 {isGenerating ? (
                   <button
                     onClick={handleStop}
-                    className="shrink-0 w-9 h-9 flex items-center justify-center bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    className="shrink-0 w-9 h-9 flex items-center justify-center bg-foreground/60 text-background rounded-lg hover:bg-foreground/80 transition-colors"
                     title="停止生成"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
