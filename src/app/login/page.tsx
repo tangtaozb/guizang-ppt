@@ -32,24 +32,32 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { error: err } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { shouldCreateUser: true },
-    });
+    try {
+      const res = await fetch("/api/auth/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json();
 
-    if (err) {
-      setError(
-        err.message.includes("rate")
-          ? "发送太频繁，请稍后再试"
-          : `发送失败：${err.message}`
-      );
+      if (!res.ok) {
+        setError(data.error || "发送失败");
+        setLoading(false);
+        return;
+      }
+
+      // Dev mode: API returns OTP directly when no email service configured
+      if (data.otp) {
+        setCode(data.otp);
+      }
+
+      setStep("code");
+      setCountdown(60);
+    } catch {
+      setError("网络错误，请重试");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setStep("code");
-    setCountdown(60);
-    setLoading(false);
   };
 
   const handleVerify = async () => {
