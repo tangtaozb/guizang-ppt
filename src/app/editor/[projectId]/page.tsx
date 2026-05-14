@@ -10,6 +10,7 @@ import { countSlides } from "@/lib/storage";
 import {
   dbCreateProject,
   dbGetProject,
+  dbUpdateProject,
   dbSaveAfterGeneration,
   dbConsumeCredits,
   classifyIntent,
@@ -172,6 +173,8 @@ export default function EditorPage() {
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [showVersions, setShowVersions] = useState(false);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
   const justCreatedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -190,6 +193,7 @@ export default function EditorPage() {
       justCreatedRef.current = false;
       return;
     }
+    setGenerating(false); // reset stale generating state from previous visit
     let cancelled = false;
     dbGetProject(paramId).then((project) => {
       if (cancelled) return;
@@ -248,8 +252,10 @@ export default function EditorPage() {
 
   const ensureProject = useCallback(async (): Promise<string> => {
     if (projectId) return projectId;
-    const title = sourceText.slice(0, 20).replace(/\n/g, " ") || "未命名演示";
-    const project = await dbCreateProject({ title, theme, sourceText });
+    // Read latest sourceText from store (not from stale closure)
+    const latestSourceText = useEditorStore.getState().sourceText || sourceText;
+    const title = latestSourceText.slice(0, 20).replace(/\n/g, " ") || "未命名演示";
+    const project = await dbCreateProject({ title, theme, sourceText: latestSourceText });
     setProjectId(project.id);
     setProjectTitle(title);
     justCreatedRef.current = true; // prevent loading effect from overwriting local state
@@ -415,6 +421,20 @@ export default function EditorPage() {
 
         setGenerating(false);
         abortRef.current = null;
+        // Persist chat messages so they survive page reload
+        if (projectId) {
+          const allMsgs = useEditorStore.getState().messages;
+          const sc = currentHtml ? countSlides(currentHtml) : 0;
+          dbSaveAfterGeneration(projectId, {
+            html: currentHtml || "",
+            label: `对话：${userMsg.slice(0, 20)}`,
+            messages: allMsgs.map((m) => ({ role: m.role, content: m.content })),
+            slideCount: sc,
+          }).then((result) => {
+            setVersions((prev) => [...prev, result.version]);
+            setCurrentVersionId(result.version.id);
+          }).catch(() => {});
+        }
       } catch (e: unknown) {
         if (e instanceof DOMException && e.name === "AbortError") return;
         updateLastAssistantMessage(`对话失败：${e instanceof Error ? e.message : "未知错误"}`);
@@ -551,14 +571,41 @@ export default function EditorPage() {
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0">
+      <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 relative z-50">
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <span className="text-sm font-medium">{projectTitle}</span>
+          {editingTitle ? (
+            <input
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={() => {
+                const newTitle = titleDraft.trim() || projectTitle;
+                setProjectTitle(newTitle);
+                setEditingTitle(false);
+                if (projectId && newTitle !== projectTitle) {
+                  dbUpdateProject(projectId, { title: newTitle }).catch(() => {});
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") { setEditingTitle(false); }
+              }}
+              className="text-sm font-medium px-1.5 py-0.5 border border-accent rounded focus:outline-none focus:ring-1 focus:ring-accent w-48"
+              autoFocus
+            />
+          ) : (
+            <span
+              className="text-sm font-medium cursor-pointer hover:text-accent transition-colors"
+              onClick={() => { setTitleDraft(projectTitle); setEditingTitle(true); }}
+              title="点击重命名"
+            >
+              {projectTitle}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
