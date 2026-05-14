@@ -421,6 +421,55 @@ export default function EditorPage() {
         setGenerating(false);
         abortRef.current = null;
       }
+    } else if (!currentHtml?.trim()) {
+      // ── No PPT yet — treat as generation request ──
+      appendMessage(createMessage("assistant", "正在分析内容并生成演示文稿..."));
+      setSourceText(userMsg);
+      try {
+        const res = await fetch("/api/projects/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sourceText: userMsg, theme }),
+          signal: ac.signal,
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "生成失败");
+        }
+
+        await consumeSSE(
+          res,
+          () => { updateLastAssistantMessage("正在生成中..."); },
+          async (html) => {
+            setHtml(html);
+            const pid = await ensureProject();
+            saveVersion(pid, html, "初次生成");
+            dbConsumeCredits({
+              amount: 10,
+              description: "生成演示文稿",
+              projectTitle: projectTitle || "未命名演示",
+              type: "generate",
+            }).catch(() => {});
+            updateLastAssistantMessage(
+              "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
+            );
+            setGenerating(false);
+            abortRef.current = null;
+          },
+          (error) => {
+            updateLastAssistantMessage(`生成失败：${error}`);
+            setGenerating(false);
+            abortRef.current = null;
+          },
+          ac.signal
+        );
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        updateLastAssistantMessage(`生成失败：${e instanceof Error ? e.message : "未知错误"}`);
+        setGenerating(false);
+        abortRef.current = null;
+      }
     } else {
       // ── Edit flow (HTML modification) ──
       appendMessage(createMessage("assistant", "正在修改..."));
