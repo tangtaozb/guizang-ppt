@@ -245,15 +245,18 @@ export default function DashboardPage() {
                 {showThemePicker && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowThemePicker(false)} />
-                    <div className="absolute left-0 top-full mt-2 w-48 bg-white rounded-xl border border-border shadow-lg z-20 py-1 max-h-[340px] overflow-y-auto">
+                    <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl border border-border shadow-lg z-20 py-1 max-h-[420px] overflow-y-auto">
                       <button
                         onClick={() => { setSelectedTheme("auto"); setShowThemePicker(false); }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
                           selectedTheme === "auto" ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
                         }`}
                       >
                         <span className="w-4 h-4 rounded-full bg-gradient-to-br from-gray-800 via-blue-900 to-amber-900 shrink-0" />
-                        自动（AI 推荐）
+                        <div>
+                          <div className="text-xs">自动（AI 推荐）</div>
+                          <div className="text-[10px] text-muted-foreground/60 mt-0.5">根据内容智能匹配最佳风格</div>
+                        </div>
                       </button>
                       <div className="px-3 pt-2.5 pb-1">
                         <span className="text-[10px] font-medium text-muted-foreground/70 tracking-wider uppercase">Style A · 电子墨水</span>
@@ -262,12 +265,15 @@ export default function DashboardPage() {
                         <button
                           key={t.id}
                           onClick={() => { setSelectedTheme(t.id); setShowThemePicker(false); }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${
+                          className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
                             selectedTheme === t.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
                           }`}
                         >
                           <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: t.ink }} />
-                          {t.name}
+                          <div>
+                            <div className="text-xs">{t.name}</div>
+                            <div className="text-[10px] text-muted-foreground/60 mt-0.5">{t.desc}</div>
+                          </div>
                         </button>
                       ))}
                       <div className="px-3 pt-2.5 pb-1 border-t border-border/40 mt-1">
@@ -277,12 +283,15 @@ export default function DashboardPage() {
                         <button
                           key={t.id}
                           onClick={() => { setSelectedTheme(t.id); setShowThemePicker(false); }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors ${
+                          className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
                             selectedTheme === t.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
                           }`}
                         >
                           <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: t.accent }} />
-                          {t.name}
+                          <div>
+                            <div className="text-xs">{t.name}</div>
+                            <div className="text-[10px] text-muted-foreground/60 mt-0.5">{t.desc}</div>
+                          </div>
                         </button>
                       ))}
                     </div>
