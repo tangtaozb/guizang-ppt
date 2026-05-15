@@ -13,57 +13,8 @@ import {
   dbUpdateProject,
   dbSaveAfterGeneration,
   dbConsumeCredits,
-  classifyIntent,
-  isSourceTextChat,
 } from "@/lib/db";
 import { UserCenter } from "@/components/user-center";
-
-async function consumeSSE(
-  response: Response,
-  onDelta: (content: string) => void,
-  onComplete: (html: string) => void,
-  onError: (error: string) => void,
-  signal?: AbortSignal
-) {
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  try {
-    while (true) {
-      if (signal?.aborted) {
-        reader.cancel();
-        return;
-      }
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith("data: ")) continue;
-        try {
-          const data = JSON.parse(trimmed.slice(6));
-          if (data.type === "delta") {
-            onDelta(data.content);
-          } else if (data.type === "complete") {
-            onComplete(data.html);
-          } else if (data.type === "error") {
-            onError(data.message);
-          }
-        } catch {
-          // skip malformed
-        }
-      }
-    }
-  } catch (e: unknown) {
-    if (e instanceof DOMException && e.name === "AbortError") return;
-    throw e;
-  }
-}
 
 function VersionPanel({
   versions,
@@ -142,6 +93,12 @@ function VersionPanel({
   );
 }
 
+// Module-level: tracks project IDs just created via ensureProject().
+// Survives component remounts (unlike useRef) but clears on page refresh.
+// Fixes race: router.replace remounts component → loading effect fires →
+// DB has empty currentHtml (saveVersion not done yet) → showSourceInput flips to true.
+const _justCreatedIds = new Set<string>();
+
 export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
@@ -188,9 +145,12 @@ export default function EditorPage() {
       return;
     }
     // Skip loading if we just created this project via ensureProject() —
-    // local state is already correct, and loading now would race with saveVersion()
-    if (justCreatedRef.current) {
+    // local state is already correct, and loading now would race with saveVersion().
+    // Check both: ref (survives re-renders) and module-level set (survives remounts).
+    if (justCreatedRef.current || _justCreatedIds.has(paramId)) {
       justCreatedRef.current = false;
+      _justCreatedIds.delete(paramId);
+      setShowSourceInput(false);
       return;
     }
     setGenerating(false); // reset stale generating state from previous visit
@@ -221,14 +181,9 @@ export default function EditorPage() {
     if (isNew && sourceText && !currentHtml && !isGenerating && !autoGenRef.current) {
       autoGenRef.current = true;
       setShowSourceInput(false);
-
-      if (isSourceTextChat(sourceText)) {
-        // User asked a question from homepage, not PPT source material
-        handleSendMessage(sourceText);
-        setSourceText("");
-      } else {
-        handleGenerate();
-      }
+      // All messages go through the unified Agent endpoint
+      // The Agent will decide whether to generate PPT or chat
+      handleSendMessage(sourceText);
     }
   });
 
@@ -258,7 +213,8 @@ export default function EditorPage() {
     const project = await dbCreateProject({ title, theme, sourceText: latestSourceText });
     setProjectId(project.id);
     setProjectTitle(title);
-    justCreatedRef.current = true; // prevent loading effect from overwriting local state
+    justCreatedRef.current = true; // prevent loading effect on re-render
+    _justCreatedIds.add(project.id); // prevent loading effect on remount
     router.replace(`/editor/${project.id}`, { scroll: false });
     return project.id;
   }, [projectId, sourceText, theme, router, setProjectTitle]);
@@ -290,79 +246,10 @@ export default function EditorPage() {
     setGenerating(false);
   };
 
-  const handleGenerate = async () => {
-    if (!sourceText.trim()) return;
-    setShowSourceInput(false);
-    setGenerating(true);
-
-    const ac = new AbortController();
-    abortRef.current = ac;
-
-    appendMessage(
-      createMessage(
-        "user",
-        sourceText.length > 100
-          ? sourceText.slice(0, 100) + "..."
-          : sourceText
-      )
-    );
-    appendMessage(createMessage("assistant", "正在分析内容并生成演示文稿..."));
-
-    try {
-      const res = await fetch("/api/projects/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceText, theme }),
-        signal: ac.signal,
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "生成失败");
-      }
-
-      await consumeSSE(
-        res,
-        () => {
-          updateLastAssistantMessage("正在生成中...");
-        },
-        async (html) => {
-          setHtml(html);
-          const pid = await ensureProject();
-          saveVersion(pid, html, "初次生成");
-          dbConsumeCredits({
-            amount: 10,
-            description: "生成演示文稿",
-            projectTitle: projectTitle || "未命名演示",
-            type: "generate",
-          }).catch(() => {});
-          updateLastAssistantMessage(
-            "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
-          );
-          setGenerating(false);
-          abortRef.current = null;
-        },
-        (error) => {
-          updateLastAssistantMessage(`生成失败：${error}`);
-          setGenerating(false);
-          abortRef.current = null;
-        },
-        ac.signal
-      );
-    } catch (e: unknown) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      updateLastAssistantMessage(`生成失败：${e instanceof Error ? e.message : "未知错误"}`);
-      setGenerating(false);
-      abortRef.current = null;
-    }
-  };
-
   const handleSendMessage = async (directMsg?: string) => {
     const userMsg = directMsg || input.trim();
     if (!userMsg || isGenerating) return;
     if (!directMsg) setInput("");
-
-    const intent = classifyIntent(userMsg);
 
     appendMessage(createMessage("user", userMsg));
     setGenerating(true);
@@ -374,176 +261,150 @@ export default function EditorPage() {
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role, content: m.content }));
 
-    if (intent === "chat") {
-      // ── Discussion / Q&A flow (no HTML modification) ──
-      appendMessage(createMessage("assistant", ""));
-      try {
-        const res = await fetch("/api/projects/discuss", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: userMsg, currentHtml, chatHistory }),
-          signal: ac.signal,
-        });
+    try {
+      const res = await fetch("/api/projects/agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMsg,
+          currentHtml,
+          chatHistory,
+          theme,
+          sourceText,
+        }),
+        signal: ac.signal,
+      });
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "对话失败");
-        }
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "处理失败");
+      }
 
-        const reader = res.body!.getReader();
-        const decoder = new TextDecoder();
-        let sseBuffer = "";
-        let fullReply = "";
+      // Consume unified Agent SSE stream
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let mode: "edit" | "generate" | "chat" | null = null;
+      let fullHtml = "";
+      let pendingAssistantMsg = false;
 
-        while (true) {
-          if (ac.signal.aborted) { reader.cancel(); return; }
-          const { done, value } = await reader.read();
-          if (done) break;
+      while (true) {
+        if (ac.signal.aborted) { reader.cancel(); return; }
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          sseBuffer += decoder.decode(value, { stream: true });
-          const lines = sseBuffer.split("\n");
-          sseBuffer = lines.pop() || "";
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split("\n");
+        sseBuffer = lines.pop() || "";
 
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith("data: ")) continue;
-            try {
-              const data = JSON.parse(trimmed.slice(6));
-              if (data.type === "delta") {
-                fullReply += data.content;
-                updateLastAssistantMessage(fullReply);
-              } else if (data.type === "done") {
-                // finished
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          try {
+            const data = JSON.parse(trimmed.slice(6));
+
+            if (data.type === "mode") {
+              mode = data.mode;
+              if (mode === "chat") {
+                // Chat mode — we'll get the full reply in "done" event
+              } else if (mode === "generate") {
+                appendMessage(createMessage("assistant", "正在分析内容并生成演示文稿..."));
+                pendingAssistantMsg = true;
+                if (!sourceText) setSourceText(userMsg);
+              } else if (mode === "edit") {
+                appendMessage(createMessage("assistant", "正在修改..."));
+                pendingAssistantMsg = true;
               }
-            } catch { /* skip */ }
-          }
-        }
+            } else if (data.type === "delta") {
+              if (mode === "generate" || mode === "edit") {
+                if (pendingAssistantMsg) {
+                  updateLastAssistantMessage(mode === "generate" ? "正在生成中..." : "正在修改中...");
+                }
+              }
+            } else if (data.type === "complete" && data.html) {
+              // HTML generation/edit complete
+              fullHtml = data.html;
+              setHtml(fullHtml);
 
-        setGenerating(false);
-        abortRef.current = null;
-        // Persist chat messages so they survive page reload
-        if (projectId) {
-          const allMsgs = useEditorStore.getState().messages;
-          const sc = currentHtml ? countSlides(currentHtml) : 0;
-          dbSaveAfterGeneration(projectId, {
-            html: currentHtml || "",
-            label: `对话：${userMsg.slice(0, 20)}`,
-            messages: allMsgs.map((m) => ({ role: m.role, content: m.content })),
-            slideCount: sc,
-          }).then((result) => {
-            setVersions((prev) => [...prev, result.version]);
-            setCurrentVersionId(result.version.id);
-          }).catch(() => {});
-        }
-      } catch (e: unknown) {
-        if (e instanceof DOMException && e.name === "AbortError") return;
-        updateLastAssistantMessage(`对话失败：${e instanceof Error ? e.message : "未知错误"}`);
-        setGenerating(false);
-        abortRef.current = null;
-      }
-    } else if (!currentHtml?.trim()) {
-      // ── No PPT yet — treat as generation request ──
-      appendMessage(createMessage("assistant", "正在分析内容并生成演示文稿..."));
-      setSourceText(userMsg);
-      try {
-        const res = await fetch("/api/projects/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sourceText: userMsg, theme }),
-          signal: ac.signal,
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "生成失败");
-        }
-
-        await consumeSSE(
-          res,
-          () => { updateLastAssistantMessage("正在生成中..."); },
-          async (html) => {
-            setHtml(html);
-            const pid = await ensureProject();
-            saveVersion(pid, html, "初次生成");
-            dbConsumeCredits({
-              amount: 10,
-              description: "生成演示文稿",
-              projectTitle: projectTitle || "未命名演示",
-              type: "generate",
-            }).catch(() => {});
-            updateLastAssistantMessage(
-              "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
-            );
-            setGenerating(false);
-            abortRef.current = null;
-          },
-          (error) => {
-            updateLastAssistantMessage(`生成失败：${error}`);
-            setGenerating(false);
-            abortRef.current = null;
-          },
-          ac.signal
-        );
-      } catch (e: unknown) {
-        if (e instanceof DOMException && e.name === "AbortError") return;
-        updateLastAssistantMessage(`生成失败：${e instanceof Error ? e.message : "未知错误"}`);
-        setGenerating(false);
-        abortRef.current = null;
-      }
-    } else {
-      // ── Edit flow (HTML modification) ──
-      appendMessage(createMessage("assistant", "正在修改..."));
-      try {
-        const res = await fetch("/api/projects/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            currentHtml,
-            instruction: userMsg,
-            chatHistory,
-          }),
-          signal: ac.signal,
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "修改失败");
-        }
-
-        await consumeSSE(
-          res,
-          () => {
-            updateLastAssistantMessage("正在修改中...");
-          },
-          (html) => {
-            setHtml(html);
-            if (projectId) {
-              saveVersion(projectId, html, `修改：${userMsg.slice(0, 30)}`);
-              dbConsumeCredits({
-                amount: 5,
-                description: `编辑：${userMsg.slice(0, 20)}`,
-                projectTitle: projectTitle || "未命名演示",
-                type: "edit",
-              }).catch(() => {});
+              if (mode === "generate") {
+                const pid = await ensureProject();
+                saveVersion(pid, fullHtml, "初次生成");
+                dbConsumeCredits({
+                  amount: 10,
+                  description: "生成演示文稿",
+                  projectTitle: projectTitle || "未命名演示",
+                  type: "generate",
+                }).catch(() => {});
+                updateLastAssistantMessage(
+                  "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
+                );
+              } else if (mode === "edit") {
+                if (projectId) {
+                  saveVersion(projectId, fullHtml, `修改：${userMsg.slice(0, 30)}`);
+                  dbConsumeCredits({
+                    amount: 5,
+                    description: `编辑：${userMsg.slice(0, 20)}`,
+                    projectTitle: projectTitle || "未命名演示",
+                    type: "edit",
+                  }).catch(() => {});
+                }
+                updateLastAssistantMessage(`已完成修改：${userMsg}`);
+              }
+              setGenerating(false);
+              abortRef.current = null;
+            } else if (data.type === "done") {
+              // Chat response complete
+              if (mode === "chat" && data.message) {
+                appendMessage(createMessage("assistant", data.message));
+                // Persist chat messages
+                if (projectId) {
+                  const allMsgs = useEditorStore.getState().messages;
+                  const sc = currentHtml ? countSlides(currentHtml) : 0;
+                  dbSaveAfterGeneration(projectId, {
+                    html: currentHtml || "",
+                    label: `对话：${userMsg.slice(0, 20)}`,
+                    messages: allMsgs.map((m) => ({ role: m.role, content: m.content })),
+                    slideCount: sc,
+                  }).then((result) => {
+                    setVersions((prev) => [...prev, result.version]);
+                    setCurrentVersionId(result.version.id);
+                  }).catch(() => {});
+                }
+              }
+              setGenerating(false);
+              abortRef.current = null;
+            } else if (data.type === "error") {
+              updateLastAssistantMessage(`失败：${data.message || "未知错误"}`);
+              setGenerating(false);
+              abortRef.current = null;
             }
-            updateLastAssistantMessage(`已完成修改：${userMsg}`);
-            setGenerating(false);
-            abortRef.current = null;
-          },
-          (error) => {
-            updateLastAssistantMessage(`修改失败：${error}`);
-            setGenerating(false);
-            abortRef.current = null;
-          },
-          ac.signal
-        );
-      } catch (e: unknown) {
-        if (e instanceof DOMException && e.name === "AbortError") return;
-        updateLastAssistantMessage(`修改失败：${e instanceof Error ? e.message : "未知错误"}`);
+          } catch { /* skip malformed */ }
+        }
+      }
+
+      // Ensure generating state is cleared
+      if (useEditorStore.getState().isGenerating) {
         setGenerating(false);
         abortRef.current = null;
       }
+    } catch (e: unknown) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      const errorMsg = e instanceof Error ? e.message : "未知错误";
+      appendMessage(createMessage("assistant", `处理失败：${errorMsg}`));
+      setGenerating(false);
+      abortRef.current = null;
     }
+  };
+
+  const handleGenerate = async () => {
+    if (!sourceText.trim()) return;
+    setShowSourceInput(false);
+    // Delegate to handleSendMessage — Agent will route to generate_ppt
+    const briefMsg =
+      sourceText.length > 100
+        ? sourceText.slice(0, 100) + "..."
+        : sourceText;
+    handleSendMessage(briefMsg);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -571,7 +432,7 @@ export default function EditorPage() {
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 relative z-50">
+      <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
