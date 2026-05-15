@@ -308,7 +308,7 @@ ${instruction}
 ${compressedHtml}`;
 }
 
-function compressHtml(html: string): string {
+export function compressHtml(html: string): string {
   return html
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\n\s*\n/g, "\n")

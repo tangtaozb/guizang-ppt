@@ -80,6 +80,13 @@ function AllProjectsModal({
   onDelete: (id: string) => void;
   onClose: () => void;
 }) {
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   return (
     <div
       className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
@@ -170,7 +177,14 @@ export default function DashboardPage() {
     if (!inputText.trim()) return;
     reset();
     setSourceText(inputText.trim());
-    if (selectedTheme !== "auto") setTheme(selectedTheme);
+    if (selectedTheme === "auto") {
+      // Randomly pick a theme for variety (instead of always ink-classic)
+      const allIds = THEMES.map((t) => t.id);
+      const picked = allIds[Math.floor(Math.random() * allIds.length)];
+      setTheme(picked);
+    } else {
+      setTheme(selectedTheme);
+    }
     router.push("/editor/new");
   };
 

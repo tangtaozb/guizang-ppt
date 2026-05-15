@@ -122,7 +122,9 @@ export function UserCenter() {
   const [profile, setProfile] = useState<DbUserProfile | null>(null);
   const [editing, setEditing] = useState(false);
   const [nickname, setNickname] = useState("");
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
 
   useEffect(() => {
     dbGetUser().then(setProfile).catch(() => {});
@@ -133,10 +135,24 @@ export function UserCenter() {
     dbGetUser().then(setProfile).catch(() => {});
   }, [open]);
 
+  // Calculate dropdown position when opening
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + 8,
+      right: window.innerWidth - rect.right,
+    });
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(target) &&
+        buttonRef.current && !buttonRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     };
@@ -158,97 +174,101 @@ export function UserCenter() {
 
   return (
     <>
-      <div className="relative" ref={dropdownRef}>
-        <button
-          onClick={() => setOpen(!open)}
-          className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+      <button
+        ref={buttonRef}
+        onClick={() => setOpen(!open)}
+        className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+      >
+        {initial}
+      </button>
+
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed w-72 bg-white rounded-xl border border-border shadow-lg z-[9999] overflow-hidden"
+          style={{ top: dropdownPos.top, right: dropdownPos.right }}
         >
-          {initial}
-        </button>
-
-        {open && (
-          <div className="absolute right-0 top-10 w-72 bg-white rounded-xl border border-border shadow-lg z-[60] overflow-hidden">
-            {/* Profile header */}
-            <div className="px-4 py-4 bg-gradient-to-br from-accent/5 to-accent/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-sm font-semibold text-accent">
-                  {initial}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {editing ? (
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        value={nickname}
-                        onChange={(e) => setNickname(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSaveNickname()}
-                        className="flex-1 px-2 py-0.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
-                        autoFocus
-                      />
-                      <button onClick={handleSaveNickname} className="text-xs text-accent hover:underline">
-                        保存
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-semibold truncate">{profile.nickname}</span>
-                      <button
-                        onClick={() => { setEditing(true); setNickname(profile.nickname); }}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{profile.email || profile.phone}</p>
-                </div>
+          {/* Profile header */}
+          <div className="px-4 py-4 bg-gradient-to-br from-accent/5 to-accent/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-sm font-semibold text-accent">
+                {initial}
               </div>
-            </div>
-
-            {/* Plan & Credits */}
-            <div className="px-4 py-3 border-b border-border">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">当前套餐</span>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                  {PLAN_LABELS[profile.plan] || profile.plan}
-                </span>
+              <div className="flex-1 min-w-0">
+                {editing ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveNickname()}
+                      className="flex-1 px-2 py-0.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
+                      autoFocus
+                    />
+                    <button onClick={handleSaveNickname} className="text-xs text-accent hover:underline">
+                      保存
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold truncate">{profile.nickname}</span>
+                    <button
+                      onClick={() => { setEditing(true); setNickname(profile.nickname); }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{profile.email || profile.phone}</p>
               </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-muted-foreground">剩余积分</span>
-                <span className="text-sm font-bold text-foreground">{profile.credits}</span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="py-1">
-              <button
-                onClick={() => { setShowHistory(true); setOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors"
-              >
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                积分消耗记录
-              </button>
-              <button
-                onClick={async () => {
-                  const supabase = createClient();
-                  await supabase.auth.signOut();
-                  router.push("/login");
-                  router.refresh();
-                }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors text-red-500"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                </svg>
-                退出登录
-              </button>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Plan & Credits */}
+          <div className="px-4 py-3 border-b border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">当前套餐</span>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                {PLAN_LABELS[profile.plan] || profile.plan}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-muted-foreground">剩余积分</span>
+              <span className="text-sm font-bold text-foreground">{profile.credits}</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="py-1">
+            <button
+              onClick={() => { setShowHistory(true); setOpen(false); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors"
+            >
+              <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              积分消耗记录
+            </button>
+            <button
+              onClick={async () => {
+                const supabase = createClient();
+                await supabase.auth.signOut();
+                router.push("/login");
+                router.refresh();
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors text-red-500"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              </svg>
+              退出登录
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {showHistory && (
         <CreditHistoryModal
