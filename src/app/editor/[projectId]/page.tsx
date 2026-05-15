@@ -213,11 +213,16 @@ export default function EditorPage() {
     const project = await dbCreateProject({ title, theme, sourceText: latestSourceText });
     setProjectId(project.id);
     setProjectTitle(title);
-    justCreatedRef.current = true; // prevent loading effect on re-render
-    _justCreatedIds.add(project.id); // prevent loading effect on remount
-    router.replace(`/editor/${project.id}`, { scroll: false });
+    // NOTE: do NOT router.replace here — caller must await saveVersion() first,
+    // then call navigateToProject() to prevent the loading effect from seeing empty HTML.
     return project.id;
-  }, [projectId, sourceText, theme, router, setProjectTitle]);
+  }, [projectId, sourceText, theme, setProjectTitle]);
+
+  const navigateToProject = useCallback((pid: string) => {
+    justCreatedRef.current = true;
+    _justCreatedIds.add(pid);
+    router.replace(`/editor/${pid}`, { scroll: false });
+  }, [router]);
 
   const saveVersion = useCallback(
     async (pid: string, html: string, label: string) => {
@@ -328,7 +333,10 @@ export default function EditorPage() {
 
               if (mode === "generate") {
                 const pid = await ensureProject();
-                saveVersion(pid, fullHtml, "初次生成");
+                // Await saveVersion so DB has the HTML BEFORE we navigate.
+                // This prevents the loading effect from fetching empty currentHtml.
+                await saveVersion(pid, fullHtml, "初次生成");
+                navigateToProject(pid);
                 dbConsumeCredits({
                   amount: 10,
                   description: "生成演示文稿",
@@ -340,7 +348,7 @@ export default function EditorPage() {
                 );
               } else if (mode === "edit") {
                 if (projectId) {
-                  saveVersion(projectId, fullHtml, `修改：${userMsg.slice(0, 30)}`);
+                  await saveVersion(projectId, fullHtml, `修改：${userMsg.slice(0, 30)}`);
                   dbConsumeCredits({
                     amount: 5,
                     description: `编辑：${userMsg.slice(0, 20)}`,
