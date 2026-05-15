@@ -332,6 +332,10 @@ export default function EditorPage() {
               setHtml(fullHtml);
 
               if (mode === "generate") {
+                // Update message BEFORE saveVersion — saveVersion reads messages from store
+                updateLastAssistantMessage(
+                  "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
+                );
                 const pid = await ensureProject();
                 // Await saveVersion so DB has the HTML BEFORE we navigate.
                 // This prevents the loading effect from fetching empty currentHtml.
@@ -343,10 +347,9 @@ export default function EditorPage() {
                   projectTitle: projectTitle || "未命名演示",
                   type: "generate",
                 }).catch(() => {});
-                updateLastAssistantMessage(
-                  "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
-                );
               } else if (mode === "edit") {
+                // Update message BEFORE saveVersion
+                updateLastAssistantMessage(`已完成修改：${userMsg}`);
                 if (projectId) {
                   await saveVersion(projectId, fullHtml, `修改：${userMsg.slice(0, 30)}`);
                   dbConsumeCredits({
@@ -356,7 +359,6 @@ export default function EditorPage() {
                     type: "edit",
                   }).catch(() => {});
                 }
-                updateLastAssistantMessage(`已完成修改：${userMsg}`);
               }
               setGenerating(false);
               abortRef.current = null;
