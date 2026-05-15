@@ -38,7 +38,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-lg font-bold tracking-tight">
-            GuiZang<span className="text-accent">PPT</span>
+            One<span className="text-accent">PPT</span>
           </Link>
           <div className="flex items-center gap-6">
             <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -181,10 +181,10 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border py-8 px-6 bg-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-sm text-muted-foreground">
-          <span>© 2026 GuiZang PPT</span>
+          <span>© 2026 One PPT</span>
           <div className="flex gap-6">
             <Link href="/pricing" className="hover:text-foreground transition-colors">定价</Link>
-            <a href="mailto:support@guizangppt.com" className="hover:text-foreground transition-colors">联系我们</a>
+            <a href="mailto:support@oneppt.com" className="hover:text-foreground transition-colors">联系我们</a>
           </div>
         </div>
       </footer>

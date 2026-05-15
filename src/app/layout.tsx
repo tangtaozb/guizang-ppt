@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GuiZang PPT - AI 杂志风演示文稿",
+  title: "One PPT - AI 杂志风演示文稿",
   description: "用 AI 生成精美的杂志风横向翻页 PPT，支持在线预览和下载",
 };
 

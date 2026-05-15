@@ -91,7 +91,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold tracking-tight">
-            GuiZang<span className="text-accent">PPT</span>
+            One<span className="text-accent">PPT</span>
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
             AI 杂志风演示文稿生成器
