@@ -15,6 +15,8 @@ import {
   dbConsumeCredits,
 } from "@/lib/db";
 import { UserCenter } from "@/components/user-center";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslation } from "@/i18n";
 
 function VersionPanel({
   versions,
@@ -27,12 +29,13 @@ function VersionPanel({
   onSelect: (v: ProjectVersion) => void;
   onClose: () => void;
 }) {
+  const { t, locale } = useTranslation();
   return (
     <>
     <div className="absolute inset-0 z-20" onClick={onClose} />
     <div className="absolute left-0 top-0 bottom-0 w-72 bg-white border-r border-border z-30 flex flex-col shadow-lg">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold">版本历史</h3>
+        <h3 className="text-sm font-semibold">{t("editor.versionsTitle")}</h3>
         <button
           onClick={onClose}
           className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted transition-colors"
@@ -44,7 +47,7 @@ function VersionPanel({
       </div>
       <div className="flex-1 overflow-y-auto">
         {versions.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8">暂无版本记录</p>
+          <p className="text-xs text-muted-foreground text-center py-8">{t("editor.noVersions")}</p>
         ) : (
           <div className="py-1">
             {[...versions].reverse().map((v, idx) => {
@@ -62,16 +65,16 @@ function VersionPanel({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-accent">
-                        v{versions.length - idx}
+                        {t("editor.versionPrefix")}{versions.length - idx}
                       </span>
                       {isCurrent && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-white leading-none">
-                          预览中
+                          {t("editor.currentVersion")}
                         </span>
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(v.createdAt).toLocaleString("zh-CN", {
+                      {new Date(v.createdAt).toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
                         month: "2-digit",
                         day: "2-digit",
                         hour: "2-digit",
@@ -102,6 +105,7 @@ const _justCreatedIds = new Set<string>();
 export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const paramId = params.projectId as string;
   const isNew = paramId === "new";
 
@@ -228,14 +232,14 @@ export default function EditorPage() {
     if (projectId) return projectId;
     // Read latest sourceText from store (not from stale closure)
     const latestSourceText = useEditorStore.getState().sourceText || sourceText;
-    const title = latestSourceText.slice(0, 20).replace(/\n/g, " ") || "未命名演示";
+    const title = latestSourceText.slice(0, 20).replace(/\n/g, " ") || t("common.untitled");
     const project = await dbCreateProject({ title, theme, sourceText: latestSourceText });
     setProjectId(project.id);
     setProjectTitle(title);
     // NOTE: do NOT router.replace here — caller must await saveVersion() first,
     // then call navigateToProject() to prevent the loading effect from seeing empty HTML.
     return project.id;
-  }, [projectId, sourceText, theme, setProjectTitle]);
+  }, [projectId, sourceText, theme, setProjectTitle, t]);
 
   const navigateToProject = useCallback((pid: string) => {
     justCreatedRef.current = true;
@@ -266,7 +270,7 @@ export default function EditorPage() {
   const handleStop = () => {
     abortRef.current?.abort();
     abortRef.current = null;
-    updateLastAssistantMessage("已停止生成");
+    updateLastAssistantMessage(t("editor.msgStopped"));
     setGenerating(false);
   };
 
@@ -332,17 +336,17 @@ export default function EditorPage() {
               if (mode === "chat") {
                 // Chat mode — we'll get the full reply in "done" event
               } else if (mode === "generate") {
-                appendMessage(createMessage("assistant", "正在分析内容并生成演示文稿..."));
+                appendMessage(createMessage("assistant", t("editor.msgGenerating")));
                 pendingAssistantMsg = true;
                 if (!sourceText) setSourceText(userMsg);
               } else if (mode === "edit") {
-                appendMessage(createMessage("assistant", "正在修改..."));
+                appendMessage(createMessage("assistant", t("editor.msgEditing")));
                 pendingAssistantMsg = true;
               }
             } else if (data.type === "delta") {
               if (mode === "generate" || mode === "edit") {
                 if (pendingAssistantMsg) {
-                  updateLastAssistantMessage(mode === "generate" ? "正在生成中..." : "正在修改中...");
+                  updateLastAssistantMessage(mode === "generate" ? t("editor.msgGeneratingShort") : t("editor.msgEditingShort"));
                 }
               }
             } else if (data.type === "complete" && data.html) {
@@ -352,29 +356,27 @@ export default function EditorPage() {
 
               if (mode === "generate") {
                 // Update message BEFORE saveVersion — saveVersion reads messages from store
-                updateLastAssistantMessage(
-                  "演示文稿已生成，你可以在右侧预览。试试输入修改指令，如「换成蓝色主题」「加一页关于团队的」。"
-                );
+                updateLastAssistantMessage(t("editor.msgGenerated"));
                 const pid = await ensureProject();
                 // Await saveVersion so DB has the HTML BEFORE we navigate.
                 // This prevents the loading effect from fetching empty currentHtml.
-                await saveVersion(pid, fullHtml, "初次生成");
+                await saveVersion(pid, fullHtml, t("editor.versionInitial"));
                 navigateToProject(pid);
                 dbConsumeCredits({
                   amount: 10,
-                  description: "生成演示文稿",
-                  projectTitle: projectTitle || "未命名演示",
+                  description: t("userCenter.generate"),
+                  projectTitle: projectTitle || t("common.untitled"),
                   type: "generate",
                 }).catch(() => {});
               } else if (mode === "edit") {
                 // Update message BEFORE saveVersion
-                updateLastAssistantMessage(`已完成修改：${userMsg}`);
+                updateLastAssistantMessage(t("editor.msgEditDone", { text: userMsg }));
                 if (projectId) {
-                  await saveVersion(projectId, fullHtml, `修改：${userMsg.slice(0, 30)}`);
+                  await saveVersion(projectId, fullHtml, t("editor.versionEdit", { text: userMsg.slice(0, 30) }));
                   dbConsumeCredits({
                     amount: 5,
-                    description: `编辑：${userMsg.slice(0, 20)}`,
-                    projectTitle: projectTitle || "未命名演示",
+                    description: `${t("userCenter.edit")}: ${userMsg.slice(0, 20)}`,
+                    projectTitle: projectTitle || t("common.untitled"),
                     type: "edit",
                   }).catch(() => {});
                 }
@@ -391,7 +393,7 @@ export default function EditorPage() {
                   const sc = currentHtml ? countSlides(currentHtml) : 0;
                   dbSaveAfterGeneration(projectId, {
                     html: currentHtml || "",
-                    label: `对话：${userMsg.slice(0, 20)}`,
+                    label: t("editor.versionChat", { text: userMsg.slice(0, 20) }),
                     messages: allMsgs.map((m) => ({ role: m.role, content: m.content })),
                     slideCount: sc,
                   }).then((result) => {
@@ -403,7 +405,7 @@ export default function EditorPage() {
               setGenerating(false);
               abortRef.current = null;
             } else if (data.type === "error") {
-              updateLastAssistantMessage(`失败：${data.message || "未知错误"}`);
+              updateLastAssistantMessage(t("editor.msgError", { error: data.message || t("editor.msgUnknownError") }));
               setGenerating(false);
               abortRef.current = null;
             }
@@ -418,8 +420,8 @@ export default function EditorPage() {
       }
     } catch (e: unknown) {
       if (e instanceof DOMException && e.name === "AbortError") return;
-      const errorMsg = e instanceof Error ? e.message : "未知错误";
-      appendMessage(createMessage("assistant", `处理失败：${errorMsg}`));
+      const errorMsg = e instanceof Error ? e.message : t("editor.msgUnknownError");
+      appendMessage(createMessage("assistant", t("editor.msgFailed", { error: errorMsg })));
       setGenerating(false);
       abortRef.current = null;
     }
@@ -452,7 +454,7 @@ export default function EditorPage() {
     setHtml(v.html);
     setCurrentVersionId(v.id);
     appendMessage(
-      createMessage("assistant", `已切换到版本：${v.label}。你可以基于此版本继续编辑。`)
+      createMessage("assistant", t("editor.msgVersionSwitched", { label: v.label }))
     );
   };
 
@@ -491,7 +493,7 @@ export default function EditorPage() {
             <span
               className="text-sm font-medium cursor-pointer hover:text-accent transition-colors"
               onClick={() => { setTitleDraft(projectTitle); setEditingTitle(true); }}
-              title="点击重命名"
+              title={t("editor.renameTitle")}
             >
               {projectTitle}
             </span>
@@ -512,7 +514,7 @@ export default function EditorPage() {
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {versions.length} 个版本
+              {t("editor.versionCount", { count: versions.length })}
             </button>
           )}
 
@@ -528,12 +530,12 @@ export default function EditorPage() {
             }}
             disabled={!currentHtml}
             className="flex items-center gap-1.5 text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-30"
-            title="全屏预览"
+            title={t("editor.fullscreenPreview")}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
             </svg>
-            全屏预览
+            {t("editor.fullscreenPreview")}
           </button>
 
           <button
@@ -544,9 +546,10 @@ export default function EditorPage() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            下载 PPT
+            {t("editor.downloadPpt")}
           </button>
 
+          <LanguageSwitcher compact />
           <UserCenter />
         </div>
       </header>

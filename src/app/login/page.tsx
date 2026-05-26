@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslation } from "@/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -25,7 +28,7 @@ export default function LoginPage() {
 
   const handleSendCode = async () => {
     if (!email.trim() || !email.includes("@")) {
-      setError("请输入有效的邮箱地址");
+      setError(t("login.invalidEmail"));
       return;
     }
     if (loading) return;
@@ -41,7 +44,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "发送失败");
+        setError(data.error || t("common.error"));
         setLoading(false);
         return;
       }
@@ -54,7 +57,7 @@ export default function LoginPage() {
       setStep("code");
       setCountdown(60);
     } catch {
-      setError("网络错误，请重试");
+      setError(t("login.networkError"));
     } finally {
       setLoading(false);
     }
@@ -74,8 +77,8 @@ export default function LoginPage() {
     if (err) {
       setError(
         err.message.includes("expired") || err.message.includes("invalid")
-          ? "验证码错误或已过期，请重新发送"
-          : `验证失败：${err.message}`
+          ? t("login.invalidCode")
+          : `${t("common.error")}: ${err.message}`
       );
       setLoading(false);
       return;
@@ -86,7 +89,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#fafafa]">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#fafafa] relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -94,13 +100,13 @@ export default function LoginPage() {
             One<span className="text-accent">PPT</span>
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
-            AI 杂志风演示文稿生成器
+            {t("login.subtitle")}
           </p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-2xl border border-border shadow-sm p-6">
-          <h2 className="text-base font-semibold mb-5">邮箱登录</h2>
+          <h2 className="text-base font-semibold mb-5">{t("login.title")}</h2>
 
           {error && (
             <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 text-red-600 text-xs">
@@ -112,7 +118,7 @@ export default function LoginPage() {
             {/* Email */}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                邮箱地址
+                {t("login.emailLabel")}
               </label>
               <input
                 type="email"
@@ -121,7 +127,7 @@ export default function LoginPage() {
                 onKeyDown={(e) =>
                   e.key === "Enter" && step === "email" && handleSendCode()
                 }
-                placeholder="your@email.com"
+                placeholder={t("login.emailPlaceholder")}
                 disabled={step === "code"}
                 className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent disabled:bg-muted/50 disabled:text-muted-foreground"
                 autoFocus
@@ -134,14 +140,14 @@ export default function LoginPage() {
                 disabled={!email.trim() || loading}
                 className="w-full py-2.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {loading ? "发送中..." : "发送验证码"}
+                {loading ? t("login.sendingCode") : t("login.sendCode")}
               </button>
             ) : (
               <>
                 {/* Code */}
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                    验证码
+                    {t("login.codeLabel")}
                   </label>
                   <input
                     type="text"
@@ -151,13 +157,13 @@ export default function LoginPage() {
                       setCode(e.target.value.replace(/\D/g, "").slice(0, 8))
                     }
                     onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-                    placeholder="输入验证码"
+                    placeholder={t("login.codePlaceholder")}
                     maxLength={8}
                     className="w-full px-3 py-2.5 border border-border rounded-lg text-sm text-center tracking-[0.5em] font-mono focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     autoFocus
                   />
                   <p className="text-[11px] text-muted-foreground mt-1.5">
-                    验证码已发送至 {email}
+                    {t("login.codeSent", { email })}
                   </p>
                 </div>
 
@@ -166,7 +172,7 @@ export default function LoginPage() {
                   disabled={code.length < 6 || loading}
                   className="w-full py-2.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  {loading ? "验证中..." : "登录"}
+                  {loading ? t("login.verifying") : t("login.verify")}
                 </button>
 
                 <div className="flex items-center justify-between">
@@ -178,14 +184,14 @@ export default function LoginPage() {
                     }}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    ← 修改邮箱
+                    ← {t("login.backToEmail")}
                   </button>
                   <button
                     onClick={handleSendCode}
                     disabled={countdown > 0 || loading}
                     className="text-xs text-accent hover:underline disabled:text-muted-foreground disabled:no-underline"
                   >
-                    {countdown > 0 ? `${countdown}s 后重发` : "重新发送"}
+                    {countdown > 0 ? t("login.resendIn", { seconds: countdown }) : t("login.resendCode")}
                   </button>
                 </div>
               </>
@@ -194,7 +200,10 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground/60 mt-6">
-          首次登录将自动注册并赠送 100 积分
+          {t("login.agreement")}{" "}
+          <Link href="/terms" className="underline hover:text-foreground">{t("login.terms")}</Link>
+          {" "}{t("login.and")}{" "}
+          <Link href="/privacy" className="underline hover:text-foreground">{t("login.privacy")}</Link>
         </p>
       </div>
     </div>

@@ -4,10 +4,28 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/stores/editor";
 import { UserCenter } from "@/components/user-center";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslation } from "@/i18n";
 import { THEMES, THEMES_A, THEMES_B } from "@/types";
 import type { ThemeId, Theme } from "@/types";
 import { dbGetProjects, dbDeleteProject } from "@/lib/db";
 import type { DbProjectListItem } from "@/lib/db";
+
+// Map theme id → i18n key for name + description
+function themeI18nKey(id: ThemeId): { name: string; desc: string } {
+  const map: Record<ThemeId, { name: string; desc: string }> = {
+    "ink-classic": { name: "themes.inkClassic", desc: "themes.inkClassicDesc" },
+    indigo: { name: "themes.indigo", desc: "themes.indigoDesc" },
+    forest: { name: "themes.forest", desc: "themes.forestDesc" },
+    kraft: { name: "themes.kraft", desc: "themes.kraftDesc" },
+    dune: { name: "themes.dune", desc: "themes.duneDesc" },
+    ikb: { name: "themes.ikb", desc: "themes.ikbDesc" },
+    lemon: { name: "themes.lemon", desc: "themes.lemonDesc" },
+    "lemon-green": { name: "themes.lemonGreen", desc: "themes.lemonGreenDesc" },
+    "safety-orange": { name: "themes.safetyOrange", desc: "themes.safetyOrangeDesc" },
+  };
+  return map[id];
+}
 
 function getCardColors(themeId: string): { bg: string; text: string } {
   const t = THEMES.find((th) => th.id === themeId);
@@ -23,12 +41,12 @@ function getThemeDot(t: Theme): string {
   return t.ink;
 }
 
-const EXAMPLE_TEMPLATES = [
-  { id: "ex1", title: "年度商业计划书", tag: "商业", color: "#0a1f3d" },
-  { id: "ex2", title: "产品发布会演示", tag: "产品", color: "#1a2e1f" },
-  { id: "ex3", title: "团队季度复盘", tag: "管理", color: "#2a1e13" },
-  { id: "ex4", title: "技术架构分享", tag: "技术", color: "#0a0a0b" },
-  { id: "ex5", title: "品牌故事叙述", tag: "品牌", color: "#1f1a14" },
+const EXAMPLE_TEMPLATES: { id: string; titleZh: string; titleEn: string; tagZh: string; tagEn: string; color: string }[] = [
+  { id: "ex1", titleZh: "年度商业计划书", titleEn: "Annual business plan", tagZh: "商业", tagEn: "Business", color: "#0a1f3d" },
+  { id: "ex2", titleZh: "产品发布会演示", titleEn: "Product launch deck", tagZh: "产品", tagEn: "Product", color: "#1a2e1f" },
+  { id: "ex3", titleZh: "团队季度复盘", titleEn: "Quarterly team review", tagZh: "管理", tagEn: "Mgmt", color: "#2a1e13" },
+  { id: "ex4", titleZh: "技术架构分享", titleEn: "Tech architecture talk", tagZh: "技术", tagEn: "Tech", color: "#0a0a0b" },
+  { id: "ex5", titleZh: "品牌故事叙述", titleEn: "Brand storytelling", tagZh: "品牌", tagEn: "Brand", color: "#1f1a14" },
 ];
 
 function ConfirmModal({
@@ -42,6 +60,7 @@ function ConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
@@ -55,13 +74,13 @@ function ConfirmModal({
             onClick={onCancel}
             className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors"
           >
-            取消
+            {t("common.cancel")}
           </button>
           <button
             onClick={onConfirm}
             className="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
           >
-            删除
+            {t("common.delete")}
           </button>
         </div>
       </div>
@@ -80,6 +99,7 @@ function AllProjectsModal({
   onDelete: (id: string) => void;
   onClose: () => void;
 }) {
+  const { t, locale } = useTranslation();
   // Lock body scroll while modal is open
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -94,7 +114,7 @@ function AllProjectsModal({
     >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[75vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="font-semibold text-base">全部演示文稿</h3>
+          <h3 className="font-semibold text-base">{t("dashboard.allProjectsTitle")}</h3>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
@@ -129,14 +149,14 @@ function AllProjectsModal({
                         className="absolute bottom-2 right-3 text-[10px] font-mono opacity-50"
                         style={{ color: tc.text }}
                       >
-                        {p.slideCount} 页
+                        {p.slideCount} {t("dashboard.pageCount")}
                       </span>
                     )}
                   </div>
                   <div className="p-3 bg-white">
                     <h3 className="font-medium text-xs truncate">{p.title}</h3>
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      {new Date(p.updatedAt).toLocaleDateString("zh-CN")}
+                      {new Date(p.updatedAt).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US")}
                     </p>
                   </div>
                   <button
@@ -159,6 +179,7 @@ function AllProjectsModal({
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const [projects, setProjects] = useState<DbProjectListItem[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -217,7 +238,10 @@ export default function DashboardPage() {
           <span className="text-lg font-bold tracking-tight">
             One<span className="text-accent">PPT</span>
           </span>
-          <UserCenter />
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <UserCenter />
+          </div>
         </div>
       </nav>
 
@@ -225,14 +249,14 @@ export default function DashboardPage() {
         {/* Hero input area */}
         <div className="w-full max-w-2xl pt-16 pb-10">
           <h1 className="text-2xl font-bold text-center mb-8">
-            今天你想制作什么 PPT？
+            {t("dashboard.heroTitle")}
           </h1>
           <div className="bg-white rounded-2xl border border-border shadow-sm focus-within:ring-2 focus-within:ring-accent/20 focus-within:border-accent">
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="描述你想生成的 PPT 内容，如：一份关于人工智能发展历史的演示文稿..."
+              placeholder={t("dashboard.inputPlaceholder")}
               rows={3}
               className="w-full px-4 py-3.5 border-none rounded-t-2xl text-sm resize-none focus:outline-none bg-transparent placeholder:text-muted-foreground/60"
             />
@@ -247,13 +271,13 @@ export default function DashboardPage() {
                   ) : (
                     <span
                       className="w-4 h-4 rounded-full border border-border/50"
-                      style={{ backgroundColor: getThemeDot(THEMES.find((t) => t.id === selectedTheme)!) }}
+                      style={{ backgroundColor: getThemeDot(THEMES.find((th) => th.id === selectedTheme)!) }}
                     />
                   )}
                   <span className="text-muted-foreground">
                     {selectedTheme === "auto"
-                      ? "自动风格"
-                      : THEMES.find((t) => t.id === selectedTheme)?.name}
+                      ? t("dashboard.autoStyle")
+                      : t(themeI18nKey(selectedTheme as ThemeId).name)}
                   </span>
                   <svg className="w-3 h-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -271,43 +295,43 @@ export default function DashboardPage() {
                       >
                         <span className="w-4 h-4 rounded-full bg-gradient-to-br from-gray-800 via-blue-900 to-amber-900 shrink-0" />
                         <div>
-                          <div className="text-xs">自动（AI 推荐）</div>
-                          <div className="text-[10px] text-muted-foreground/60 mt-0.5">根据内容智能匹配最佳风格</div>
+                          <div className="text-xs">{t("dashboard.autoStyleFull")}</div>
+                          <div className="text-[10px] text-muted-foreground/60 mt-0.5">{t("dashboard.autoStyleDesc")}</div>
                         </div>
                       </button>
                       <div className="px-3 pt-2.5 pb-1">
-                        <span className="text-[10px] font-medium text-muted-foreground/70 tracking-wider uppercase">Style A · 电子墨水</span>
+                        <span className="text-[10px] font-medium text-muted-foreground/70 tracking-wider uppercase">{t("dashboard.styleASection")}</span>
                       </div>
-                      {THEMES_A.map((t) => (
+                      {THEMES_A.map((th) => (
                         <button
-                          key={t.id}
-                          onClick={() => { setSelectedTheme(t.id); setShowThemePicker(false); }}
+                          key={th.id}
+                          onClick={() => { setSelectedTheme(th.id); setShowThemePicker(false); }}
                           className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
-                            selectedTheme === t.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
+                            selectedTheme === th.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
                           }`}
                         >
-                          <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: t.ink }} />
+                          <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: th.ink }} />
                           <div>
-                            <div className="text-xs">{t.name}</div>
-                            <div className="text-[10px] text-muted-foreground/60 mt-0.5">{t.desc}</div>
+                            <div className="text-xs">{t(themeI18nKey(th.id).name)}</div>
+                            <div className="text-[10px] text-muted-foreground/60 mt-0.5">{t(themeI18nKey(th.id).desc)}</div>
                           </div>
                         </button>
                       ))}
                       <div className="px-3 pt-2.5 pb-1 border-t border-border/40 mt-1">
-                        <span className="text-[10px] font-medium text-muted-foreground/70 tracking-wider uppercase">Style B · 瑞士风格</span>
+                        <span className="text-[10px] font-medium text-muted-foreground/70 tracking-wider uppercase">{t("dashboard.styleBSection")}</span>
                       </div>
-                      {THEMES_B.map((t) => (
+                      {THEMES_B.map((th) => (
                         <button
-                          key={t.id}
-                          onClick={() => { setSelectedTheme(t.id); setShowThemePicker(false); }}
+                          key={th.id}
+                          onClick={() => { setSelectedTheme(th.id); setShowThemePicker(false); }}
                           className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
-                            selectedTheme === t.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
+                            selectedTheme === th.id ? "bg-accent/10 text-accent font-medium" : "hover:bg-muted"
                           }`}
                         >
-                          <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: t.accent }} />
+                          <span className="w-4 h-4 rounded-full shrink-0 border border-border/30" style={{ backgroundColor: th.accent }} />
                           <div>
-                            <div className="text-xs">{t.name}</div>
-                            <div className="text-[10px] text-muted-foreground/60 mt-0.5">{t.desc}</div>
+                            <div className="text-xs">{t(themeI18nKey(th.id).name)}</div>
+                            <div className="text-[10px] text-muted-foreground/60 mt-0.5">{t(themeI18nKey(th.id).desc)}</div>
                           </div>
                         </button>
                       ))}
@@ -323,7 +347,7 @@ export default function DashboardPage() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                生成
+                {t("dashboard.generate")}
               </button>
             </div>
           </div>
@@ -333,13 +357,13 @@ export default function DashboardPage() {
         {projects.length > 0 && (
           <div className="w-full max-w-5xl mb-10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground">我的演示文稿</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("dashboard.myProjects")}</h2>
               {hasMore && (
                 <button
                   onClick={() => setShowAll(true)}
                   className="text-xs text-accent hover:underline font-medium"
                 >
-                  全部 ({projects.length})
+                  {t("dashboard.seeAll")} ({projects.length})
                 </button>
               )}
             </div>
@@ -367,7 +391,7 @@ export default function DashboardPage() {
                           className="absolute bottom-1.5 right-2 text-[10px] font-mono opacity-50"
                           style={{ color: tc.text }}
                         >
-                          {p.slideCount} 页
+                          {p.slideCount} {t("dashboard.pageCount")}
                         </span>
                       )}
                     </div>
@@ -376,7 +400,7 @@ export default function DashboardPage() {
                         {p.title}
                       </h3>
                       <p className="text-[10px] text-muted-foreground mt-1">
-                        {new Date(p.updatedAt).toLocaleDateString("zh-CN")}
+                        {new Date(p.updatedAt).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US")}
                       </p>
                     </div>
                     <button
@@ -397,33 +421,37 @@ export default function DashboardPage() {
         {/* Example templates */}
         <div className="w-full max-w-5xl pb-16">
           <h2 className="text-sm font-semibold text-foreground mb-4">
-            {projects.length > 0 ? "优秀案例" : "优秀案例，点击即可体验"}
+            {projects.length > 0 ? t("dashboard.exampleTemplates") : t("dashboard.exampleTemplatesClick")}
           </h2>
           <div className="grid grid-cols-5 gap-3">
-            {EXAMPLE_TEMPLATES.map((t) => (
-              <div
-                key={t.id}
-                className="group rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-              >
+            {EXAMPLE_TEMPLATES.map((ex) => {
+              const title = locale === "zh" ? ex.titleZh : ex.titleEn;
+              const tag = locale === "zh" ? ex.tagZh : ex.tagEn;
+              return (
                 <div
-                  className="aspect-[16/10] flex items-center justify-center relative"
-                  style={{ backgroundColor: t.color }}
+                  key={ex.id}
+                  className="group rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                 >
-                  <span className="text-xs font-serif font-bold px-3 text-center leading-snug text-white/90">
-                    {t.title}
-                  </span>
-                  <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded bg-white/20 text-white/70 backdrop-blur-sm">
-                    {t.tag}
-                  </span>
+                  <div
+                    className="aspect-[16/10] flex items-center justify-center relative"
+                    style={{ backgroundColor: ex.color }}
+                  >
+                    <span className="text-xs font-serif font-bold px-3 text-center leading-snug text-white/90">
+                      {title}
+                    </span>
+                    <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded bg-white/20 text-white/70 backdrop-blur-sm">
+                      {tag}
+                    </span>
+                  </div>
+                  <div className="px-3 py-2.5 bg-white">
+                    <h3 className="font-medium text-xs truncate group-hover:text-accent transition-colors">
+                      {title}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mt-1">{t("dashboard.caseTemplate")}</p>
+                  </div>
                 </div>
-                <div className="px-3 py-2.5 bg-white">
-                  <h3 className="font-medium text-xs truncate group-hover:text-accent transition-colors">
-                    {t.title}
-                  </h3>
-                  <p className="text-[10px] text-muted-foreground mt-1">案例模板</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </main>
@@ -431,8 +459,8 @@ export default function DashboardPage() {
       {/* Delete confirm */}
       {deleteTarget && (
         <ConfirmModal
-          title="删除演示文稿"
-          message="确定要删除这个演示文稿吗？所有版本历史也将被删除，此操作不可撤销。"
+          title={t("dashboard.deleteTitle")}
+          message={t("dashboard.deleteMessage")}
           onConfirm={() => handleDelete(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
         />

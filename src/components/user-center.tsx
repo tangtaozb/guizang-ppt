@@ -7,30 +7,37 @@ import { dbGetUser, dbUpdateNickname, dbGetCredits } from "@/lib/db";
 import type { DbUserProfile } from "@/lib/db";
 import type { CreditRecord } from "@/types";
 import { createClient } from "@/lib/supabase-browser";
+import { useTranslation } from "@/i18n";
 
-const PLAN_LABELS: Record<string, string> = {
-  free: "免费版",
-  per_use: "按次付费",
-  monthly: "月卡会员",
-  yearly: "年卡会员",
-};
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function planLabelKey(plan: string): string {
+  const map: Record<string, string> = {
+    free: "userCenter.freePlan",
+    per_use: "userCenter.starterPlan",
+    starter: "userCenter.starterPlan",
+    monthly: "userCenter.proPlan",
+    pro: "userCenter.proPlan",
+    yearly: "userCenter.teamPlan",
+    team: "userCenter.teamPlan",
+  };
+  return map[plan] || "userCenter.freePlan";
 }
 
 const PAGE_SIZE = 8;
 
 function CreditHistoryModal({ onClose }: { onClose: () => void }) {
+  const { t, locale } = useTranslation();
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [records, setRecords] = useState<CreditRecord[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   useEffect(() => {
     setLoading(true);
@@ -50,7 +57,7 @@ function CreditHistoryModal({ onClose }: { onClose: () => void }) {
     >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="font-semibold text-base">积分消耗记录</h3>
+          <h3 className="font-semibold text-base">{t("userCenter.history")}</h3>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
@@ -62,9 +69,9 @@ function CreditHistoryModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-3">
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center py-8">加载中...</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t("common.loading")}</p>
           ) : records.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">暂无记录</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t("userCenter.noHistory")}</p>
           ) : (
             <div className="space-y-0.5">
               {records.map((r) => (
@@ -95,7 +102,7 @@ function CreditHistoryModal({ onClose }: { onClose: () => void }) {
               disabled={page === 0}
               className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              上一页
+              {t("common.back")}
             </button>
             <span className="text-xs text-muted-foreground">
               {page + 1} / {totalPages}
@@ -105,7 +112,7 @@ function CreditHistoryModal({ onClose }: { onClose: () => void }) {
               disabled={page === totalPages - 1}
               className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              下一页
+              {t("common.next")}
             </button>
           </div>
         )}
@@ -117,6 +124,7 @@ function CreditHistoryModal({ onClose }: { onClose: () => void }) {
 
 export function UserCenter() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [profile, setProfile] = useState<DbUserProfile | null>(null);
@@ -205,7 +213,7 @@ export function UserCenter() {
                       autoFocus
                     />
                     <button onClick={handleSaveNickname} className="text-xs text-accent hover:underline">
-                      保存
+                      {t("common.save")}
                     </button>
                   </div>
                 ) : (
@@ -229,13 +237,13 @@ export function UserCenter() {
           {/* Plan & Credits */}
           <div className="px-4 py-3 border-b border-border">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">当前套餐</span>
+              <span className="text-xs text-muted-foreground">{t("userCenter.plan")}</span>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                {PLAN_LABELS[profile.plan] || profile.plan}
+                {t(planLabelKey(profile.plan))}
               </span>
             </div>
             <div className="flex items-center justify-between mt-2">
-              <span className="text-xs text-muted-foreground">剩余积分</span>
+              <span className="text-xs text-muted-foreground">{t("userCenter.creditsLeft")}</span>
               <span className="text-sm font-bold text-foreground">{profile.credits}</span>
             </div>
           </div>
@@ -249,7 +257,16 @@ export function UserCenter() {
               <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              积分消耗记录
+              {t("userCenter.history")}
+            </button>
+            <button
+              onClick={() => router.push("/pricing")}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors"
+            >
+              <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+              </svg>
+              {t("userCenter.upgrade")}
             </button>
             <button
               onClick={async () => {
@@ -263,7 +280,7 @@ export function UserCenter() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
               </svg>
-              退出登录
+              {t("common.logout")}
             </button>
           </div>
         </div>,
