@@ -131,7 +131,15 @@ slides 直接放在 <body> 下，不需要额外的容器。水平翻页由系�
 - 不要连续 3 页以上用同一主题色
 - 标题不要超过 5 个字用 h-hero（太大会换行）
 - chrome 和 kicker 不要写同义内容
-- 不要给 html/body 写 CSS 规则，系统已处理`;
+- 不要给 html/body 写 CSS 规则，系统已处理
+
+## ⚠️ 大字号 + 长文本规则（严格遵守）
+**禁止给大字号文字加 max-width 限制宽度**，这会让文字挤成窄柱、每行 2-3 个字、上下溢出。
+- 大引用页（"大引用"布局）：用 .h-xl 字号（不要用 h-hero），文字让其在 frame 内自然横向延展
+- 标准模板：<div class="frame col center"><blockquote class="h-xl" style="text-align:center">"引言内容..."</blockquote><div class="meta">— 来源</div></div>
+- 引言文字控制在 30-60 个汉字以内，避免过长
+- 字号越大，单行文字越少；h-hero 一行最多 5 字，h-xl 一行最多 12 字，h-md 一行最多 20 字
+- 内容超出一页宁可减少字数，不要靠 max-width 压缩宽度`;
 }
 
 function buildSwissSystemPrompt(): string {
@@ -251,7 +259,14 @@ slides 放在 <div id="deck"> 容器内。
 - 只用一种 accent 颜色，不要引入其他彩色
 - 不要连续 3 页以上用同一背景
 - 不要给 html/body 写 CSS 规则，系统已处理
-- 底部内容不要低于 bottom: 8vh（导航安全区）`;
+- 底部内容不要低于 bottom: 8vh（导航安全区）
+
+## ⚠️ 大字号 + 长文本规则（严格遵守）
+**禁止给大字号文字加 max-width 限制宽度**，这会让文字挤成窄柱、每行 2-3 个字、上下溢出。
+- 大引用 / 章节页：用 .h-xl 或 .h-md 字号（不要用 h-hero 放长文本），让文字自然横向延展
+- 引言/标题文字控制在合理长度：h-hero 最多 5 字一行，h-xl 最多 12 字一行
+- 内容超长宁可减字、降字号，**不要靠 max-width 压窄宽度**
+- 引言页结构：<div class="frame center"><blockquote class="h-xl" style="text-align:center">"内容..."</blockquote></div>`;
 }
 
 export function buildGeneratePrompt(

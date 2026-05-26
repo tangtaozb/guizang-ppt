@@ -77,30 +77,44 @@ export async function postProcessHtml(html: string): Promise<string> {
     }
   }
 
-  // Auto-fit script — scales .frame down when AI content overflows the slide.
-  // Uses CSS zoom (not transform:scale) because zoom changes actual layout size,
-  // letting flexbox/justify-content reflow correctly. transform:scale only
-  // shrinks visually, causing children with justify-content:center to be pushed
-  // outside the visible area (header gets clipped, bottom shows empty space).
+  // Auto-fit script — scales .frame down (via CSS zoom) when AI content
+  // overflows. Uses getBoundingClientRect to measure actual descendant extents
+  // because scrollHeight is unreliable in flex containers (returns clientHeight
+  // even when children visually overflow via justify-content:center, etc).
+  // Checks both height AND width overflow (AI sometimes sets max-width that
+  // causes large fonts to wrap into narrow tall columns).
   const autoFitScript = `<script>
 (function(){
+  function measure(frame){
+    frame.style.zoom='';
+    var fr=frame.getBoundingClientRect();
+    var all=frame.querySelectorAll('*');
+    if(all.length===0)return null;
+    var minT=fr.top,maxB=fr.bottom,minL=fr.left,maxR=fr.right;
+    for(var i=0;i<all.length;i++){
+      var r=all[i].getBoundingClientRect();
+      if(r.height===0||r.width===0)continue;
+      if(r.top<minT)minT=r.top;
+      if(r.bottom>maxB)maxB=r.bottom;
+      if(r.left<minL)minL=r.left;
+      if(r.right>maxR)maxR=r.right;
+    }
+    return{nH:maxB-minT,nW:maxR-minL,aH:fr.height,aW:fr.width};
+  }
   function fit(){
     document.querySelectorAll('.slide').forEach(function(slide){
       var frame=slide.querySelector('.frame');
       if(!frame)return;
-      // Reset zoom to measure natural size
-      frame.style.zoom='';
-      var available=frame.clientHeight,natural=frame.scrollHeight;
-      if(natural>available+2){
-        var r=(available/natural)*0.97;
-        frame.style.zoom=r.toFixed(4);
-      }
+      var m=measure(frame);
+      if(!m)return;
+      var hR=m.aH/m.nH,wR=m.aW/m.nW;
+      var r=Math.min(hR,wR,1)*0.97;
+      if(r<0.99){frame.style.zoom=r.toFixed(4)}
     });
   }
   if(document.readyState==='complete'){fit()}else{window.addEventListener('load',fit)}
   window.addEventListener('resize',function(){clearTimeout(window.__fitT);window.__fitT=setTimeout(fit,120)});
   if(document.fonts&&document.fonts.ready){document.fonts.ready.then(fit)}
-  // re-fit after Lucide icons render (icons may change layout)
   setTimeout(fit,300);setTimeout(fit,1000);
 })();
 </script>`;
