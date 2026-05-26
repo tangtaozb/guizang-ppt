@@ -76,6 +76,30 @@ export function postProcessHtml(html: string): string {
     }
   }
 
+  // Auto-fit script — scales .frame down when AI content overflows the slide.
+  // Without this, .slide's overflow:hidden silently clips the bottom of pages.
+  const autoFitScript = `<script>
+(function(){
+  function fit(){
+    document.querySelectorAll('.slide').forEach(function(slide){
+      var frame=slide.querySelector('.frame');
+      if(!frame)return;
+      frame.style.transform='';frame.style.transformOrigin='top center';
+      var available=frame.clientHeight,natural=frame.scrollHeight;
+      if(natural>available+2){
+        var r=(available/natural)*0.98;
+        frame.style.transform='scale('+r.toFixed(4)+')';
+      }
+    });
+  }
+  if(document.readyState==='complete'){fit()}else{window.addEventListener('load',fit)}
+  window.addEventListener('resize',function(){clearTimeout(window.__fitT);window.__fitT=setTimeout(fit,120)});
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(fit)}
+  // re-fit after Lucide icons render (icons may change layout)
+  setTimeout(fit,300);setTimeout(fit,1000);
+})();
+</script>`;
+
   // Inject navigation script — Swiss uses #deck transform, e-ink uses scroll snap
   const navScript = isSwiss
     ? `<script>
@@ -100,7 +124,7 @@ export function postProcessHtml(html: string): string {
 </script>`;
 
   if (processed.includes("</body>")) {
-    processed = processed.replace("</body>", navScript + "</body>");
+    processed = processed.replace("</body>", autoFitScript + navScript + "</body>");
   }
 
   return processed;
