@@ -77,18 +77,22 @@ export function postProcessHtml(html: string): string {
   }
 
   // Auto-fit script — scales .frame down when AI content overflows the slide.
-  // Without this, .slide's overflow:hidden silently clips the bottom of pages.
+  // Uses CSS zoom (not transform:scale) because zoom changes actual layout size,
+  // letting flexbox/justify-content reflow correctly. transform:scale only
+  // shrinks visually, causing children with justify-content:center to be pushed
+  // outside the visible area (header gets clipped, bottom shows empty space).
   const autoFitScript = `<script>
 (function(){
   function fit(){
     document.querySelectorAll('.slide').forEach(function(slide){
       var frame=slide.querySelector('.frame');
       if(!frame)return;
-      frame.style.transform='';frame.style.transformOrigin='top center';
+      // Reset zoom to measure natural size
+      frame.style.zoom='';
       var available=frame.clientHeight,natural=frame.scrollHeight;
       if(natural>available+2){
-        var r=(available/natural)*0.98;
-        frame.style.transform='scale('+r.toFixed(4)+')';
+        var r=(available/natural)*0.97;
+        frame.style.zoom=r.toFixed(4);
       }
     });
   }
