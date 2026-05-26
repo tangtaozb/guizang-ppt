@@ -1,5 +1,6 @@
 import { TEMPLATE_CSS } from "./template-css";
 import { TEMPLATE_CSS_SWISS } from "./template-css-swiss";
+import { injectSearchedImages } from "./image-search";
 
 export function getTemplateShell(themeCSS: string): { head: string; tail: string } {
   const head = `<!DOCTYPE html>
@@ -23,7 +24,7 @@ function detectSwissStyle(html: string): boolean {
   return html.includes("--accent:") && html.includes("--grey-1:");
 }
 
-export function postProcessHtml(html: string): string {
+export async function postProcessHtml(html: string): Promise<string> {
   let processed = html;
 
   // Extract only the HTML content — strip explanatory text and markdown code fences
@@ -129,6 +130,14 @@ export function postProcessHtml(html: string): string {
 
   if (processed.includes("</body>")) {
     processed = processed.replace("</body>", autoFitScript + navScript + "</body>");
+  }
+
+  // Inject real images from Unsplash for any .img-slot/.frame-img with data-search.
+  // Falls back to placeholder if UNSPLASH_ACCESS_KEY missing or API fails.
+  try {
+    processed = await injectSearchedImages(processed);
+  } catch (e) {
+    console.warn("[postProcessHtml] image injection failed:", e);
   }
 
   return processed;

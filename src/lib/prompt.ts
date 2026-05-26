@@ -87,7 +87,13 @@ slides 直接放在 <body> 下，不需要额外的容器。水平翻页由系�
 
 ### 图片处理
 - 不要使用真实图片 URL
-- 使用 .img-slot 占位框
+- 使用 .img-slot 占位框，**必须**带 data-search 英文关键词属性
+- 格式：<div class="img-slot" data-search="english keyword here"><span class="label">中文说明</span></div>
+- 关键词必须是简短的英文（2-4 个词），描述图片视觉内容
+- 例：理想L8 → "electric car interior" 或 "luxury suv"
+- 例：团队会议 → "team meeting office"
+- 例：科技数据 → "data visualization technology"
+- 系统会用这些关键词自动从图库搜索真实图片填充
 
 ### 主题节奏（非常重要）
 每页必须指定 light/dark/hero light/hero dark 之一：
@@ -191,7 +197,12 @@ slides 放在 <div id="deck"> 容器内。
 
 ### 图片处理
 - 不要使用真实图片 URL
-- 使用 .frame-img 占位框
+- 使用 .frame-img 占位框，**必须**带 data-search 英文关键词属性
+- 格式：<div class="frame-img" data-search="english keyword here"></div>
+- 关键词必须是简短的英文（2-4 个词），描述图片视觉内容
+- 例：理想L8 → "electric car interior" 或 "luxury suv"
+- 例：团队会议 → "team meeting office"
+- 系统会用这些关键词自动从图库搜索真实图片填充
 
 ### 页面节奏
 每页可用以下背景之一：默认（paper）/ grey / dark / accent

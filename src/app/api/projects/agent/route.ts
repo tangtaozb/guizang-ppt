@@ -183,7 +183,7 @@ async function streamHtmlResponse(
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          const processed = postProcessHtml(fullContent);
+          const processed = await postProcessHtml(fullContent);
           controller.enqueue(
             encoder.encode(
               sseEvent({ type: "complete", html: processed })
