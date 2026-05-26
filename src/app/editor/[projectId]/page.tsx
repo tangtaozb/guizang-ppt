@@ -577,15 +577,15 @@ export default function EditorPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
                   </div>
-                  <h3 className="font-semibold mb-1">粘贴你的内容</h3>
+                  <h3 className="font-semibold mb-1">{t("editor.pasteContentTitle")}</h3>
                   <p className="text-xs text-muted-foreground">
-                    将文本素材粘贴到下方，AI 会自动分析并生成演示文稿
+                    {t("editor.pasteContentDesc")}
                   </p>
                 </div>
                 <textarea
                   value={sourceText}
                   onChange={(e) => setSourceText(e.target.value)}
-                  placeholder="在这里粘贴你的文本内容..."
+                  placeholder={t("editor.pastePlaceholder")}
                   className="w-full h-48 px-3 py-2.5 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                   autoFocus
                 />
@@ -594,7 +594,7 @@ export default function EditorPage() {
                   disabled={!sourceText.trim() || isGenerating}
                   className="w-full py-2.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  {isGenerating ? "生成中..." : "开始生成"}
+                  {isGenerating ? t("editor.generating") : t("editor.startGenerate")}
                 </button>
               </div>
             ) : (
@@ -641,7 +641,7 @@ export default function EditorPage() {
                   onKeyDown={handleKeyDown}
                   onCompositionStart={() => setIsComposing(true)}
                   onCompositionEnd={() => setIsComposing(false)}
-                  placeholder="输入修改指令，如：换成蓝色主题..."
+                  placeholder={t("editor.chatPlaceholder")}
                   rows={1}
                   className="flex-1 px-3 py-2 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent max-h-32"
                   style={{ minHeight: "40px" }}
@@ -650,7 +650,7 @@ export default function EditorPage() {
                   <button
                     onClick={handleStop}
                     className="shrink-0 w-9 h-9 flex items-center justify-center bg-foreground/60 text-background rounded-lg hover:bg-foreground/80 transition-colors"
-                    title="停止生成"
+                    title={t("editor.stopGenerate")}
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <rect x="6" y="6" width="12" height="12" rx="1" />
@@ -720,7 +720,7 @@ export default function EditorPage() {
                   </svg>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  在左侧粘贴内容后，预览将在此显示
+                  {t("editor.previewPlaceholder")}
                 </p>
               </div>
             </div>

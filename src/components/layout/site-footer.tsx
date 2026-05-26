@@ -1,13 +1,17 @@
-import Link from "next/link";
+"use client";
 
-const links = [
-  { href: "/pricing", label: "定价" },
-  { href: "/privacy", label: "隐私政策" },
-  { href: "/terms", label: "服务条款" },
-  { href: "/refund", label: "退款政策" },
-];
+import Link from "next/link";
+import { useTranslation } from "@/i18n";
 
 export function SiteFooter() {
+  const { t, locale } = useTranslation();
+  const contactLabel = locale === "zh" ? "联系我们" : "Contact us";
+  const links = [
+    { href: "/pricing", label: t("common.pricing") },
+    { href: "/privacy", label: t("legal.privacy") },
+    { href: "/terms", label: t("legal.terms") },
+    { href: "/refund", label: t("legal.refund") },
+  ];
   return (
     <footer className="border-t border-border py-8 px-6 bg-white">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
@@ -26,7 +30,7 @@ export function SiteFooter() {
             href="mailto:support@oneppt.com"
             className="whitespace-nowrap hover:text-foreground transition-colors"
           >
-            联系我们
+            {contactLabel}
           </a>
         </nav>
       </div>
