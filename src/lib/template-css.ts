@@ -28,8 +28,8 @@ body{display:flex;min-width:100vw;height:100vh;font-family:var(--sans-zh);-webki
 .rule.v{width:1px;height:100%;margin:0}
 
 .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:2.6vh}
-.display{font-family:var(--serif-en);font-weight:700;font-size:11vw;line-height:.92;letter-spacing:-.025em}
-.display-zh{font-family:var(--serif-zh);font-weight:700;font-size:7.8vw;line-height:1.04;letter-spacing:-.005em}
+.display{font-family:var(--serif-en);font-weight:700;font-size:11vw;line-height:1;letter-spacing:-.025em;padding-top:.06em}
+.display-zh{font-family:var(--serif-zh);font-weight:700;font-size:7.8vw;line-height:1.04;letter-spacing:-.005em;padding-top:.05em}
 .h1-zh{font-family:var(--serif-zh);font-weight:700;font-size:4.6vw;line-height:1.12;letter-spacing:-.005em}
 .h2-zh{font-family:var(--serif-zh);font-weight:600;font-size:3.2vw;line-height:1.2;letter-spacing:0}
 .h3-zh{font-family:var(--serif-zh);font-weight:500;font-size:1.9vw;line-height:1.35}
@@ -37,13 +37,13 @@ body{display:flex;min-width:100vw;height:100vh;font-family:var(--sans-zh);-webki
 .body-serif{font-family:var(--serif-zh);font-weight:400;font-size:max(15px,1.3vw);line-height:1.65;opacity:.88}
 .lead{font-family:var(--serif-zh);font-weight:400;font-size:1.75vw;line-height:1.5;opacity:.86}
 .meta{font-family:var(--mono);font-size:max(11px,.88vw);letter-spacing:.16em;text-transform:uppercase;opacity:.6}
-.big-num{font-family:var(--serif-en);font-weight:800;font-size:10vw;line-height:.85;letter-spacing:-.03em;font-feature-settings:"tnum"}
-.mid-num{font-family:var(--serif-en);font-weight:700;font-size:5.5vw;line-height:.88;letter-spacing:-.02em;font-feature-settings:"tnum"}
+.big-num{font-family:var(--serif-en);font-weight:800;font-size:10vw;line-height:1;letter-spacing:-.03em;font-feature-settings:"tnum";padding-top:.08em}
+.mid-num{font-family:var(--serif-en);font-weight:700;font-size:5.5vw;line-height:1;letter-spacing:-.02em;font-feature-settings:"tnum";padding-top:.06em}
 .ghost{font-family:var(--serif-en);font-weight:900;font-size:34vw;line-height:.8;opacity:.06;letter-spacing:-.04em;position:absolute;font-feature-settings:"tnum"}
 em{font-style:italic;font-family:var(--serif-en)}
 .en{font-family:var(--serif-en);font-style:italic;font-weight:500}
 
-.h-hero{font-family:var(--serif-zh);font-weight:900;font-size:10vw;line-height:.96;letter-spacing:-.02em}
+.h-hero{font-family:var(--serif-zh);font-weight:900;font-size:10vw;line-height:1;letter-spacing:-.02em;padding-top:.06em}
 .h-xl{font-family:var(--serif-zh);font-weight:700;font-size:6.2vw;line-height:1.08;letter-spacing:-.01em}
 .h-sub{font-family:var(--serif-zh);font-weight:500;font-size:3.1vw;line-height:1.25;letter-spacing:0;opacity:.7}
 .h-md{font-family:var(--serif-zh);font-weight:600;font-size:2.3vw;line-height:1.3}

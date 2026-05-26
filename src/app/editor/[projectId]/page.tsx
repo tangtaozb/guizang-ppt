@@ -124,7 +124,10 @@ export default function EditorPage() {
   } = useEditorStore();
 
   const [input, setInput] = useState("");
-  const [showSourceInput, setShowSourceInput] = useState(isNew && !currentHtml && !sourceText);
+  // Default to NOT showing source input — only show when we confirm there's nothing
+  // to generate. This avoids a flash of the source-input view during dashboard→editor
+  // navigation race conditions.
+  const [showSourceInput, setShowSourceInput] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(isNew ? null : paramId);
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
@@ -138,10 +141,26 @@ export default function EditorPage() {
   const abortRef = useRef<AbortController | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // For isNew, decide whether to show source input AFTER a brief grace period
+  // to let zustand store sync from dashboard navigation. Avoids race where
+  // sourceText is read as empty before dashboard's setSourceText() propagates.
+  useEffect(() => {
+    if (!isNew) return;
+    const timer = setTimeout(() => {
+      const s = useEditorStore.getState();
+      // Only show source input if truly nothing is queued up
+      if (!s.sourceText && !s.currentHtml && !s.isGenerating) {
+        setShowSourceInput(true);
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [isNew]);
+
   // Load existing project from Supabase
   useEffect(() => {
     if (isNew) {
-      if (!sourceText) reset();
+      // Don't reset — dashboard already manages state. Calling reset() here
+      // would clobber the sourceText that dashboard just set.
       return;
     }
     // Skip loading if we just created this project via ensureProject() —
