@@ -1,15 +1,14 @@
-import Link from "next/link";
-import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/site-footer";
+"use client";
 
-export const metadata: Metadata = {
-  title: "退款政策 Refund Policy - One PPT",
-  description: "One PPT 的退款条件、流程与处理时长说明",
-};
+import Link from "next/link";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslation } from "@/i18n";
 
 const EFFECTIVE_DATE = "2026-05-27";
 
 export default function RefundPage() {
+  const { locale } = useTranslation();
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-sm">
@@ -17,16 +16,14 @@ export default function RefundPage() {
           <Link href="/" className="text-lg font-bold tracking-tight">
             One<span className="text-accent">PPT</span>
           </Link>
-          <div className="flex items-center gap-4 text-sm">
-            <a href="#zh" className="text-muted-foreground hover:text-foreground">中文</a>
-            <a href="#en" className="text-muted-foreground hover:text-foreground">English</a>
-          </div>
+          <LanguageSwitcher />
         </div>
       </nav>
 
       <main className="flex-1 mx-auto max-w-3xl px-6 py-16 prose-content">
-        {/* 中文版 */}
-        <section id="zh" className="scroll-mt-20">
+        {locale === "zh" ? (
+        /* 中文版 */
+        <section className="scroll-mt-20">
           <h1 className="text-3xl font-bold mb-2">退款政策</h1>
           <p className="text-sm text-muted-foreground mb-10">
             生效日期：{EFFECTIVE_DATE}
@@ -132,11 +129,9 @@ export default function RefundPage() {
             </p>
           </Section>
         </section>
-
-        <hr className="my-16 border-border" />
-
-        {/* English Version */}
-        <section id="en" className="scroll-mt-20">
+        ) : (
+        /* English Version */
+        <section className="scroll-mt-20">
           <h1 className="text-3xl font-bold mb-2">Refund Policy</h1>
           <p className="text-sm text-muted-foreground mb-10">
             Effective Date: {EFFECTIVE_DATE}
@@ -250,6 +245,7 @@ export default function RefundPage() {
             </p>
           </Section>
         </section>
+        )}
       </main>
 
       <SiteFooter />
