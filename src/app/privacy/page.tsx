@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-4xl flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-lg font-bold tracking-tight">
-            One<span className="text-accent">PPT</span>
+            Artify<span className="text-accent">Slide</span>
           </Link>
           <LanguageSwitcher />
         </div>
@@ -30,8 +30,8 @@ export default function PrivacyPage() {
           </p>
 
           <p className="mb-6 leading-relaxed">
-            我们（以下简称 “One PPT” 或 “我们”）非常重视用户的隐私和个人信息保护。
-            本隐私政策说明我们在你使用 One PPT 服务（包括网站 oneppt.com 及相关功能）时，
+            我们（以下简称 “Artify Slide” 或 “我们”）非常重视用户的隐私和个人信息保护。
+            本隐私政策说明我们在你使用 Artify Slide 服务（包括网站 artifyslide.com 及相关功能）时，
             如何收集、使用、存储、共享和保护你的信息。
           </p>
 
@@ -41,14 +41,14 @@ export default function PrivacyPage() {
               <li><strong>账户信息</strong>：电子邮箱地址、登录验证码。</li>
               <li><strong>使用内容</strong>：你输入用于生成 PPT 的文本内容、与 AI 的对话记录、生成的 PPT 文件。这些内容用于向你交付服务，不会被用于训练第三方模型。</li>
               <li><strong>设备与日志</strong>：IP 地址、浏览器类型、设备型号、访问时间、页面浏览记录等技术信息。</li>
-              <li><strong>支付信息</strong>：你的支付凭证（信用卡号、银行卡信息等）<strong>由我们的支付处理商 Creem（Merchant of Record）独立收集与存储，One PPT 本身不会接触或保存任何支付卡信息</strong>。我们仅接收 Creem 返回的订单号、支付状态、商品 ID。</li>
+              <li><strong>支付信息</strong>：你的支付凭证（信用卡号、银行卡信息等）<strong>由我们的支付处理商 Creem（Merchant of Record）独立收集与存储，Artify Slide 本身不会接触或保存任何支付卡信息</strong>。我们仅接收 Creem 返回的订单号、支付状态、商品 ID。</li>
               <li><strong>Cookie</strong>：用于维持登录状态和分析网站使用情况。</li>
             </ul>
           </Section>
 
           <Section title="2. 信息的使用目的">
             <ul>
-              <li>提供、维护和改进 One PPT 服务；</li>
+              <li>提供、维护和改进 Artify Slide 服务；</li>
               <li>处理订单、订阅与账户管理；</li>
               <li>客户支持与通知发送；</li>
               <li>检测和预防欺诈、滥用与违法行为；</li>
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
               <li>撤回授权同意；</li>
               <li>欧盟用户：GDPR 项下的全部权利；加州居民：CCPA 项下的全部权利。</li>
             </ul>
-            <p>如需行使权利，请发送邮件至 <a href="mailto:support@oneppt.com">support@oneppt.com</a>。</p>
+            <p>如需行使权利，请发送邮件至 <a href="mailto:support@artifyslide.com">support@artifyslide.com</a>。</p>
           </Section>
 
           <Section title="6. Cookie">
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
 
           <Section title="7. 儿童隐私">
             <p>
-              One PPT 不面向 13 岁以下的儿童提供服务。
+              Artify Slide 不面向 13 岁以下的儿童提供服务。
               我们不会有意收集 13 岁以下儿童的个人信息。
             </p>
           </Section>
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
           <Section title="11. 联系我们">
             <p>
               如对本政策有任何疑问、投诉或请求，请联系：<br />
-              邮箱：<a href="mailto:support@oneppt.com">support@oneppt.com</a><br />
+              邮箱：<a href="mailto:support@artifyslide.com">support@artifyslide.com</a><br />
               我们将在 2 个工作日内回复。
             </p>
           </Section>
@@ -140,9 +140,9 @@ export default function PrivacyPage() {
           </p>
 
           <p className="mb-6 leading-relaxed">
-            We (&quot;One PPT&quot;, &quot;we&quot;, &quot;us&quot;) respect your privacy. This Privacy Policy
+            We (&quot;Artify Slide&quot;, &quot;we&quot;, &quot;us&quot;) respect your privacy. This Privacy Policy
             explains how we collect, use, store, share, and protect your information when you use
-            One PPT services (the website oneppt.com and related features).
+            Artify Slide services (the website artifyslide.com and related features).
           </p>
 
           <Section title="1. Information We Collect">
@@ -151,14 +151,14 @@ export default function PrivacyPage() {
               <li><strong>Account information</strong>: Email address and login verification codes.</li>
               <li><strong>Content you provide</strong>: Text input used to generate slides, chat history with AI, and generated PPT files. This content is used solely to deliver the service to you and is not used to train third-party models.</li>
               <li><strong>Device and log data</strong>: IP address, browser type, device model, access timestamps, page views, and similar technical information.</li>
-              <li><strong>Payment information</strong>: Your payment credentials (card numbers, bank details, etc.) are <strong>collected and stored exclusively by our payment processor Creem (Merchant of Record). One PPT does not access, store, or process any payment card information.</strong> We only receive the order ID, payment status, and product ID returned by Creem.</li>
+              <li><strong>Payment information</strong>: Your payment credentials (card numbers, bank details, etc.) are <strong>collected and stored exclusively by our payment processor Creem (Merchant of Record). Artify Slide does not access, store, or process any payment card information.</strong> We only receive the order ID, payment status, and product ID returned by Creem.</li>
               <li><strong>Cookies</strong>: Used to maintain login sessions and analyze service usage.</li>
             </ul>
           </Section>
 
           <Section title="2. How We Use Information">
             <ul>
-              <li>To provide, maintain, and improve the One PPT service;</li>
+              <li>To provide, maintain, and improve the Artify Slide service;</li>
               <li>To process orders, subscriptions, and account management;</li>
               <li>To provide customer support and send service notifications;</li>
               <li>To detect and prevent fraud, abuse, and illegal activity;</li>
@@ -195,7 +195,7 @@ export default function PrivacyPage() {
               <li>Withdraw your consent at any time;</li>
               <li>EU residents have full rights under the GDPR; California residents have full rights under the CCPA, including the right to opt out of the sale of personal information (note: we do not sell personal information).</li>
             </ul>
-            <p>To exercise any of these rights, email <a href="mailto:support@oneppt.com">support@oneppt.com</a>.</p>
+            <p>To exercise any of these rights, email <a href="mailto:support@artifyslide.com">support@artifyslide.com</a>.</p>
           </Section>
 
           <Section title="6. Cookies">
@@ -207,7 +207,7 @@ export default function PrivacyPage() {
 
           <Section title="7. Children&apos;s Privacy">
             <p>
-              One PPT is not intended for children under the age of 13. We do not knowingly collect personal
+              Artify Slide is not intended for children under the age of 13. We do not knowingly collect personal
               information from children under 13. If you believe we have collected such information, please contact us.
             </p>
           </Section>
@@ -236,7 +236,7 @@ export default function PrivacyPage() {
           <Section title="11. Contact Us">
             <p>
               For questions, complaints, or requests regarding this policy, contact:<br />
-              Email: <a href="mailto:support@oneppt.com">support@oneppt.com</a><br />
+              Email: <a href="mailto:support@artifyslide.com">support@artifyslide.com</a><br />
               We respond within 2 business days.
             </p>
           </Section>

@@ -29,7 +29,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-lg font-bold tracking-tight">
-            One<span className="text-accent">PPT</span>
+            Artify<span className="text-accent">Slide</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

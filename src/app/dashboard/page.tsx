@@ -236,7 +236,7 @@ export default function DashboardPage() {
       <nav className="border-b border-border/60 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-5xl flex items-center justify-between px-6 h-14">
           <span className="text-lg font-bold tracking-tight">
-            One<span className="text-accent">PPT</span>
+            Artify<span className="text-accent">Slide</span>
           </span>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />

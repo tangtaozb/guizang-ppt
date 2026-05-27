@@ -8,7 +8,7 @@ import { en } from "./en";
 export type Locale = "zh" | "en";
 
 const DICTS: Record<Locale, Dict> = { zh, en };
-const STORAGE_KEY = "oneppt_locale";
+const STORAGE_KEY = "artifyslide_locale";
 
 interface LocaleStore {
   locale: Locale;

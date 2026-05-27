@@ -2,7 +2,7 @@ import type { Dict } from "./zh";
 
 export const en: Dict = {
   common: {
-    appName: "One PPT",
+    appName: "Artify Slide",
     login: "Sign in",
     logout: "Sign out",
     signup: "Sign up",
@@ -182,7 +182,7 @@ export const en: Dict = {
     upgrade: "Upgrade plan",
   },
   login: {
-    title: "Sign in to One PPT",
+    title: "Sign in to Artify Slide",
     subtitle: "Receive a verification code by email",
     emailLabel: "Email address",
     emailPlaceholder: "your@email.com",

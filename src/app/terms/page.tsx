@@ -14,7 +14,7 @@ export default function TermsPage() {
       <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-4xl flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-lg font-bold tracking-tight">
-            One<span className="text-accent">PPT</span>
+            Artify<span className="text-accent">Slide</span>
           </Link>
           <LanguageSwitcher />
         </div>
@@ -30,14 +30,14 @@ export default function TermsPage() {
           </p>
 
           <p className="mb-6 leading-relaxed">
-            欢迎使用 One PPT。本服务条款（以下简称 “本条款”）是你与 One PPT 之间就使用 One PPT 服务
-            （包括网站 oneppt.com 及相关功能，以下统称 “服务”）所订立的协议。
+            欢迎使用 Artify Slide。本服务条款（以下简称 “本条款”）是你与 Artify Slide 之间就使用 Artify Slide 服务
+            （包括网站 artifyslide.com 及相关功能，以下统称 “服务”）所订立的协议。
             注册账户、订阅或使用本服务即表示你已阅读、理解并同意本条款。
           </p>
 
           <Section title="1. 服务说明">
             <p>
-              One PPT 提供基于人工智能的演示文稿生成服务，主要功能包括：
+              Artify Slide 提供基于人工智能的演示文稿生成服务，主要功能包括：
             </p>
             <ul>
               <li>输入文本素材，由 AI 自动生成杂志风格的横向翻页 PPT；</li>
@@ -70,7 +70,7 @@ export default function TermsPage() {
             <ul>
               <li>你保留对自己输入的原始素材的全部权利。</li>
               <li>对于 AI 生成的 PPT 文件，你享有商业和非商业用途的使用权。</li>
-              <li>One PPT 网站、品牌、UI 设计、模板、代码与文档归 One PPT 所有，未经授权不得复制、修改或再发行。</li>
+              <li>Artify Slide 网站、品牌、UI 设计、模板、代码与文档归 Artify Slide 所有，未经授权不得复制、修改或再发行。</li>
             </ul>
           </Section>
 
@@ -78,7 +78,7 @@ export default function TermsPage() {
             <p>
               本服务通过 <strong>Creem.io</strong>（Merchant of Record）处理所有支付。
               当你完成购买时，Creem 作为销售方代我们收取款项并承担相应税务责任。
-              支付卡信息由 Creem 独立收集与存储，One PPT 不会接触你的支付凭证。
+              支付卡信息由 Creem 独立收集与存储，Artify Slide 不会接触你的支付凭证。
             </p>
             <p>当前提供的计费方式包括：</p>
             <ul>
@@ -102,7 +102,7 @@ export default function TermsPage() {
               <li><strong>不予退款的情形</strong>：超过 14 天的购买、已实际使用过的次数包或会员功能（含已生成 PPT 或已使用对话次数）、违反本条款被终止账户的情形。</li>
             </ul>
             <p>
-              退款流程：发送邮件至 <a href="mailto:support@oneppt.com">support@oneppt.com</a>，
+              退款流程：发送邮件至 <a href="mailto:support@artifyslide.com">support@artifyslide.com</a>，
               说明订单号与退款原因。我们将在 3 个工作日内审核并协调 Creem 处理退款，
               款项通常会在 5–10 个工作日内原路返回。
             </p>
@@ -110,7 +110,7 @@ export default function TermsPage() {
 
           <Section title="7. AI 生成内容的免责声明">
             <p>
-              One PPT 使用第三方大型语言模型生成内容。AI 生成的结果可能包含错误、不准确或不适当的内容，
+              Artify Slide 使用第三方大型语言模型生成内容。AI 生成的结果可能包含错误、不准确或不适当的内容，
               你应自行审核并对最终用途负责。我们不对生成内容的准确性、适用性或合法性作出保证。
             </p>
           </Section>
@@ -126,7 +126,7 @@ export default function TermsPage() {
           <Section title="9. 责任限制">
             <p>
               在法律允许的最大范围内，对于因使用或无法使用服务所产生的任何间接、附带、特殊或后果性损害，
-              One PPT 不承担责任。我们的总责任上限不超过你在事件发生前 6 个月内向我们支付的费用总额。
+              Artify Slide 不承担责任。我们的总责任上限不超过你在事件发生前 6 个月内向我们支付的费用总额。
             </p>
           </Section>
 
@@ -140,7 +140,7 @@ export default function TermsPage() {
           <Section title="11. 适用法律与争议解决">
             <p>
               本条款适用中华人民共和国法律。因本条款产生的争议，双方应先友好协商解决；
-              协商不成的，提交至 One PPT 运营所在地有管辖权的法院诉讼解决。
+              协商不成的，提交至 Artify Slide 运营所在地有管辖权的法院诉讼解决。
             </p>
           </Section>
 
@@ -154,7 +154,7 @@ export default function TermsPage() {
           <Section title="13. 联系我们">
             <p>
               如对本条款有任何疑问，请联系：<br />
-              邮箱：<a href="mailto:support@oneppt.com">support@oneppt.com</a>
+              邮箱：<a href="mailto:support@artifyslide.com">support@artifyslide.com</a>
             </p>
           </Section>
         </section>
@@ -167,15 +167,15 @@ export default function TermsPage() {
           </p>
 
           <p className="mb-6 leading-relaxed">
-            Welcome to One PPT. These Terms of Service (the &quot;Terms&quot;) form a binding
-            agreement between you and One PPT regarding your use of the One PPT service
-            (the website oneppt.com and related features, collectively the &quot;Service&quot;).
+            Welcome to Artify Slide. These Terms of Service (the &quot;Terms&quot;) form a binding
+            agreement between you and Artify Slide regarding your use of the Artify Slide service
+            (the website artifyslide.com and related features, collectively the &quot;Service&quot;).
             By registering, subscribing to, or using the Service, you acknowledge that you have
             read, understood, and agree to be bound by these Terms.
           </p>
 
           <Section title="1. The Service">
-            <p>One PPT provides an AI-powered presentation generation service, including:</p>
+            <p>Artify Slide provides an AI-powered presentation generation service, including:</p>
             <ul>
               <li>Generating magazine-style horizontal-swipe presentations from text input;</li>
               <li>Natural-language conversational editing of generated slides;</li>
@@ -207,16 +207,16 @@ export default function TermsPage() {
             <ul>
               <li>You retain all rights to the original material you input.</li>
               <li>You own the AI-generated PPT outputs and may use them for both commercial and non-commercial purposes.</li>
-              <li>The One PPT website, brand, UI design, templates, code, and documentation are the property of One PPT and may not be copied, modified, or redistributed without authorization.</li>
+              <li>The Artify Slide website, brand, UI design, templates, code, and documentation are the property of Artify Slide and may not be copied, modified, or redistributed without authorization.</li>
             </ul>
           </Section>
 
           <Section title="5. Payment and Subscriptions">
             <p>
               All payments are processed by <strong>Creem.io</strong>, which acts as the Merchant of Record
-              for purchases made through One PPT. Creem collects payment on our behalf and assumes responsibility
+              for purchases made through Artify Slide. Creem collects payment on our behalf and assumes responsibility
               for applicable taxes. <strong>Payment card information is collected and stored exclusively by Creem;
-              One PPT does not access or retain any payment credentials.</strong>
+              Artify Slide does not access or retain any payment credentials.</strong>
             </p>
             <p>Current pricing options:</p>
             <ul>
@@ -239,7 +239,7 @@ export default function TermsPage() {
               <li><strong>Non-refundable cases</strong>: Purchases made more than 14 days ago, packs or memberships where the included generations or chat messages have been used (in whole or in part), and accounts terminated for violation of these Terms.</li>
             </ul>
             <p>
-              To request a refund, email <a href="mailto:support@oneppt.com">support@oneppt.com</a> with your order ID and reason.
+              To request a refund, email <a href="mailto:support@artifyslide.com">support@artifyslide.com</a> with your order ID and reason.
               We will review within 3 business days and coordinate with Creem to process the refund.
               Funds typically appear via the original payment method within 5–10 business days.
             </p>
@@ -247,7 +247,7 @@ export default function TermsPage() {
 
           <Section title="7. AI-Generated Content Disclaimer">
             <p>
-              One PPT relies on third-party large language models to generate content. AI output may contain
+              Artify Slide relies on third-party large language models to generate content. AI output may contain
               errors, inaccuracies, or inappropriate material. You are responsible for reviewing the output
               and for any use you make of it. We make no warranty as to the accuracy, suitability, or legality
               of generated content.
@@ -265,7 +265,7 @@ export default function TermsPage() {
 
           <Section title="9. Limitation of Liability">
             <p>
-              To the maximum extent permitted by law, One PPT shall not be liable for any indirect, incidental,
+              To the maximum extent permitted by law, Artify Slide shall not be liable for any indirect, incidental,
               special, or consequential damages arising from your use of or inability to use the Service.
               Our total aggregate liability shall not exceed the amount you paid us in the 6 months preceding the event.
             </p>
@@ -283,7 +283,7 @@ export default function TermsPage() {
             <p>
               These Terms are governed by the laws of the People&apos;s Republic of China. Any dispute arising from
               these Terms shall first be resolved through good-faith negotiation; failing that, it shall be
-              submitted to the competent court in the jurisdiction where One PPT operates.
+              submitted to the competent court in the jurisdiction where Artify Slide operates.
             </p>
           </Section>
 
@@ -298,7 +298,7 @@ export default function TermsPage() {
           <Section title="13. Contact">
             <p>
               For questions regarding these Terms, contact:<br />
-              Email: <a href="mailto:support@oneppt.com">support@oneppt.com</a>
+              Email: <a href="mailto:support@artifyslide.com">support@artifyslide.com</a>
             </p>
           </Section>
         </section>

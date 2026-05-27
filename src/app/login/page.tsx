@@ -97,7 +97,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold tracking-tight">
-            One<span className="text-accent">PPT</span>
+            Artify<span className="text-accent">Slide</span>
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
             {t("login.subtitle")}

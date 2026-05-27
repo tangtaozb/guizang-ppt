@@ -15,7 +15,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border py-8 px-6 bg-white">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-        <span className="whitespace-nowrap">© 2026 One PPT</span>
+        <span className="whitespace-nowrap">© 2026 Artify Slide</span>
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           {links.map((l) => (
             <Link
@@ -27,7 +27,7 @@ export function SiteFooter() {
             </Link>
           ))}
           <a
-            href="mailto:support@oneppt.com"
+            href="mailto:support@artifyslide.com"
             className="whitespace-nowrap hover:text-foreground transition-colors"
           >
             {contactLabel}

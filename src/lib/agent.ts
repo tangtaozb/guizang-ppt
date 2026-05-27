@@ -136,7 +136,7 @@ export async function routeMessage(
   }
 
   // ── LLM Agent routing ──
-  const systemPrompt = `你是 One PPT 的智能助手。用户正在编辑一份演示文稿。
+  const systemPrompt = `你是 Artify Slide 的智能助手。用户正在编辑一份演示文稿。
 根据用户消息和对话历史，选择合适的工具执行操作。
 
 决策规则：

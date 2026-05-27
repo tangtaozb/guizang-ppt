@@ -54,7 +54,7 @@ export async function postProcessHtml(html: string): Promise<string> {
 
   // Inject template CSS based on detected style
   const css = isSwiss ? TEMPLATE_CSS_SWISS : TEMPLATE_CSS;
-  const templateStyle = `<style id="oneppt-base">${css}</style>`;
+  const templateStyle = `<style id="artifyslide-base">${css}</style>`;
 
   if (processed.includes("</style>")) {
     const firstStyleEnd = processed.indexOf("</style>");
@@ -62,7 +62,7 @@ export async function postProcessHtml(html: string): Promise<string> {
     if (firstStyleStart !== -1) {
       const aiStyleContent = processed.substring(firstStyleStart, firstStyleEnd + 8);
       const rootMatch = aiStyleContent.match(/:root\s*\{[^}]+\}/);
-      const themeOverride = rootMatch ? `<style id="oneppt-theme">${rootMatch[0]}</style>` : "";
+      const themeOverride = rootMatch ? `<style id="artifyslide-theme">${rootMatch[0]}</style>` : "";
       processed = processed.substring(0, firstStyleStart) + templateStyle + themeOverride + processed.substring(firstStyleEnd + 8);
     }
   } else if (processed.includes("</head>")) {

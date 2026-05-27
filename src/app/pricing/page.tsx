@@ -64,7 +64,7 @@ export default function PricingPage() {
       <nav className="border-b border-border bg-white">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-lg font-bold tracking-tight">
-            One<span className="text-accent">PPT</span>
+            Artify<span className="text-accent">Slide</span>
           </Link>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />

@@ -14,7 +14,7 @@ export default function RefundPage() {
       <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-4xl flex items-center justify-between px-6 h-14">
           <Link href="/" className="text-lg font-bold tracking-tight">
-            One<span className="text-accent">PPT</span>
+            Artify<span className="text-accent">Slide</span>
           </Link>
           <LanguageSwitcher />
         </div>
@@ -30,7 +30,7 @@ export default function RefundPage() {
           </p>
 
           <p className="mb-6 leading-relaxed">
-            我们希望你对 One PPT 的体验是值得的。如果你不满意，本退款政策说明你可以在何种条件下、
+            我们希望你对 Artify Slide 的体验是值得的。如果你不满意，本退款政策说明你可以在何种条件下、
             通过何种流程申请退款。所有付款由 <strong>Creem.io</strong>（Merchant of Record）处理，
             退款由我们与 Creem 协同执行。
           </p>
@@ -73,7 +73,7 @@ export default function RefundPage() {
           <Section title="4. 退款申请流程">
             <ol className="list-decimal pl-6 space-y-2">
               <li>
-                发送邮件至 <a href="mailto:support@oneppt.com">support@oneppt.com</a>，
+                发送邮件至 <a href="mailto:support@artifyslide.com">support@artifyslide.com</a>，
                 邮件主题写明 “退款申请”；
               </li>
               <li>
@@ -110,7 +110,7 @@ export default function RefundPage() {
           <Section title="7. 汇率与手续费">
             <p>
               退款金额以原币种、原支付通道返回。如因汇率波动产生差额，
-              One PPT 与 Creem 均不承担补差责任。Creem 不向你收取额外的退款手续费。
+              Artify Slide 与 Creem 均不承担补差责任。Creem 不向你收取额外的退款手续费。
             </p>
           </Section>
 
@@ -124,7 +124,7 @@ export default function RefundPage() {
           <Section title="9. 联系我们">
             <p>
               退款相关问题请联系：<br />
-              邮箱：<a href="mailto:support@oneppt.com">support@oneppt.com</a><br />
+              邮箱：<a href="mailto:support@artifyslide.com">support@artifyslide.com</a><br />
               我们将在 2 个工作日内回复。
             </p>
           </Section>
@@ -138,7 +138,7 @@ export default function RefundPage() {
           </p>
 
           <p className="mb-6 leading-relaxed">
-            We want your experience with One PPT to be worth it. This Refund Policy explains
+            We want your experience with Artify Slide to be worth it. This Refund Policy explains
             when and how you can request a refund. All payments are processed by{" "}
             <strong>Creem.io</strong> as our Merchant of Record, and refunds are issued jointly
             by us and Creem.
@@ -186,7 +186,7 @@ export default function RefundPage() {
           <Section title="4. How to Request a Refund">
             <ol className="list-decimal pl-6 space-y-2">
               <li>
-                Email <a href="mailto:support@oneppt.com">support@oneppt.com</a> with the subject
+                Email <a href="mailto:support@artifyslide.com">support@artifyslide.com</a> with the subject
                 line &quot;Refund Request&quot;.
               </li>
               <li>
@@ -224,7 +224,7 @@ export default function RefundPage() {
           <Section title="7. Exchange Rates and Fees">
             <p>
               Refunds are returned in the original currency through the original payment channel.
-              Neither One PPT nor Creem is responsible for any differences caused by exchange rate
+              Neither Artify Slide nor Creem is responsible for any differences caused by exchange rate
               fluctuations. Creem does not charge you an additional refund fee.
             </p>
           </Section>
@@ -240,7 +240,7 @@ export default function RefundPage() {
           <Section title="9. Contact Us">
             <p>
               For refund inquiries, contact:<br />
-              Email: <a href="mailto:support@oneppt.com">support@oneppt.com</a><br />
+              Email: <a href="mailto:support@artifyslide.com">support@artifyslide.com</a><br />
               We respond within 2 business days.
             </p>
           </Section>

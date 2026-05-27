@@ -1,6 +1,6 @@
 export const zh = {
   common: {
-    appName: "One PPT",
+    appName: "Artify Slide",
     login: "登录",
     logout: "退出登录",
     signup: "注册",
@@ -180,7 +180,7 @@ export const zh = {
     upgrade: "升级套餐",
   },
   login: {
-    title: "登录 One PPT",
+    title: "登录 Artify Slide",
     subtitle: "用邮箱接收验证码登录",
     emailLabel: "邮箱地址",
     emailPlaceholder: "your@email.com",

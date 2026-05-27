@@ -57,12 +57,12 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM || "One PPT <onboarding@resend.dev>",
+          from: process.env.EMAIL_FROM || "Artify Slide <onboarding@resend.dev>",
           to: trimmedEmail,
           subject: "您的登录验证码",
           html: `
             <div style="font-family: -apple-system, sans-serif; max-width: 400px; margin: 0 auto; padding: 32px 24px;">
-              <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 8px;">One PPT</h2>
+              <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 8px;">Artify Slide</h2>
               <p style="color: #666; font-size: 14px; margin: 0 0 24px;">您正在登录，请使用以下验证码：</p>
               <div style="font-size: 36px; font-weight: 700; letter-spacing: 6px; padding: 20px; background: #f5f5f5; border-radius: 12px; text-align: center; margin: 0 0 24px; font-family: monospace;">
                 ${otp}

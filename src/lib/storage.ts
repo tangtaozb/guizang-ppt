@@ -1,7 +1,7 @@
 import type { StoredProject, ProjectVersion, ChatMessage, UserProfile, CreditRecord, ThemeId } from "@/types";
 
-const PROJECTS_KEY = "oneppt_projects";
-const USER_KEY = "oneppt_user";
+const PROJECTS_KEY = "artifyslide_projects";
+const USER_KEY = "artifyslide_user";
 
 function genId(): string {
   return crypto.randomUUID();
