@@ -45,16 +45,16 @@ export default function RefundPage() {
           <Section title="2. 各计费方式的退款条件">
             <ul>
               <li>
-                <strong>按次付费（¥9.9 / 次）</strong>：14 天内、且本次购买的 PPT 生成与 20 次对话编辑均
-                <strong>未消耗任何一次</strong>的，可全额退款；任何一次生成或编辑被使用后即不再退款。
+                <strong>入门版 Starter（$9.9 / 月，500 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
+                且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
               <li>
-                <strong>月度会员（¥49 / 月）</strong>：首次付款或自动续费成功后 14 天内、且自上一次扣费起
-                <strong>没有使用过任何付费功能</strong>（生成、编辑、下载）的，可全额退款。
+                <strong>专业版 Pro（$19.9 / 月，1,500 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
+                且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
               <li>
-                <strong>年度会员（¥399 / 年）</strong>：首次付款或自动续费成功后 14 天内、且自上一次扣费起
-                <strong>没有使用过任何付费功能</strong>的，可全额退款。
+                <strong>团队版 Team（$49.9 / 月，5,000 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
+                且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
             </ul>
           </Section>
@@ -94,9 +94,9 @@ export default function RefundPage() {
 
           <Section title="5. 部分退款与按比例退款">
             <p>
-              月度 / 年度会员一般不提供按剩余时长的部分退款。若你取消订阅，
-              已付费的服务期会持续到当前计费周期结束，到期前你仍可正常使用，
-              到期后不再续费即可。
+              月度订阅一般不提供按剩余天数的部分退款。若你取消订阅，
+              已付费的服务期会持续到当前计费周期结束，期间你仍可正常使用，
+              到期后不再续费即可。本周期内未使用的积分到期作废，不滚存至下一周期。
             </p>
           </Section>
 
@@ -155,19 +155,19 @@ export default function RefundPage() {
           <Section title="2. Refund Eligibility by Plan">
             <ul>
               <li>
-                <strong>Per-use (CNY 9.9 per generation)</strong>: Refundable within 14 days if the
-                included PPT generation and all 20 chat edits have <strong>not been used at all</strong>.
-                Once any generation or edit is used, the purchase is non-refundable.
+                <strong>Starter ($9.9 / month, 500 credits / month)</strong>: Refundable within 14 days of
+                initial payment or auto-renewal, provided <strong>no credits have been consumed</strong>{" "}
+                in the current billing cycle.
               </li>
               <li>
-                <strong>Monthly Membership (CNY 49 / month)</strong>: Refundable within 14 days of
-                initial payment or auto-renewal, provided <strong>no paid features (generation,
-                editing, download) have been used</strong> since the most recent charge.
+                <strong>Pro ($19.9 / month, 1,500 credits / month)</strong>: Refundable within 14 days of
+                initial payment or auto-renewal, provided <strong>no credits have been consumed</strong>{" "}
+                in the current billing cycle.
               </li>
               <li>
-                <strong>Yearly Membership (CNY 399 / year)</strong>: Refundable within 14 days of
-                initial payment or auto-renewal, provided <strong>no paid features have been used</strong>{" "}
-                since the most recent charge.
+                <strong>Team ($49.9 / month, 5,000 credits / month)</strong>: Refundable within 14 days of
+                initial payment or auto-renewal, provided <strong>no credits have been consumed</strong>{" "}
+                in the current billing cycle.
               </li>
             </ul>
           </Section>
@@ -207,9 +207,9 @@ export default function RefundPage() {
 
           <Section title="5. Partial / Prorated Refunds">
             <p>
-              Monthly and yearly memberships are not refunded on a prorated basis. If you cancel,
-              your paid access continues until the end of the current billing cycle and simply does
-              not renew thereafter.
+              Monthly subscriptions are not refunded on a prorated basis. If you cancel, your paid
+              access continues until the end of the current billing cycle and simply does not renew
+              thereafter. Unused credits expire at the end of each billing cycle and do not roll over.
             </p>
           </Section>
 

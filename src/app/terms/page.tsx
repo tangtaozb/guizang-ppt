@@ -82,9 +82,9 @@ export default function TermsPage() {
             </p>
             <p>当前提供的计费方式包括：</p>
             <ul>
-              <li><strong>按次付费</strong>：¥9.9 / 次，单次 PPT 生成 + 20 次对话编辑，无有效期；</li>
-              <li><strong>月度会员</strong>：¥49 / 月，无限生成与编辑，自动续费至取消；</li>
-              <li><strong>年度会员</strong>：¥399 / 年，无限生成与编辑，自动续费至取消。</li>
+              <li><strong>入门版（Starter）</strong>：$9.9 / 月，每月 500 积分（约可生成 50 份 PPT），月度自动续费至取消；</li>
+              <li><strong>专业版（Pro）</strong>：$19.9 / 月，每月 1500 积分（约可生成 150 份 PPT），月度自动续费至取消；</li>
+              <li><strong>团队版（Team）</strong>：$49.9 / 月，每月 5000 积分（约可生成 500 份 PPT），月度自动续费至取消。</li>
             </ul>
             <p>
               订阅在每个计费周期开始时通过 Creem 自动扣款。你可随时在账户中取消订阅，取消后服务将持续到当前计费周期结束。
@@ -97,9 +97,9 @@ export default function TermsPage() {
               我们重视用户体验，提供以下退款条件：
             </p>
             <ul>
-              <li><strong>14 天无理由退款</strong>：自付款之日起 14 天内，若你<strong>尚未实际使用</strong>所购买的次数或生成功能，可申请全额退款。</li>
-              <li><strong>订阅类</strong>：自动续费后 14 天内，且自上一次续费起未使用过付费功能的，可申请退款。</li>
-              <li><strong>不予退款的情形</strong>：超过 14 天的购买、已实际使用过的次数包或会员功能（含已生成 PPT 或已使用对话次数）、违反本条款被终止账户的情形。</li>
+              <li><strong>14 天无理由退款</strong>：自付款或续费成功之日起 14 天内，若你<strong>尚未消耗任何积分</strong>，可申请全额退款。</li>
+              <li><strong>订阅续费</strong>：自动续费后 14 天内，且自上一次扣费起<strong>未消耗任何积分</strong>的，可申请退款。</li>
+              <li><strong>不予退款的情形</strong>：超过 14 天的订单、当前计费周期已消耗过任何积分（含已生成 PPT 等任何付费操作）、违反本条款被终止账户的情形。</li>
             </ul>
             <p>
               退款流程：发送邮件至 <a href="mailto:support@artifyslide.com">support@artifyslide.com</a>，
@@ -220,9 +220,9 @@ export default function TermsPage() {
             </p>
             <p>Current pricing options:</p>
             <ul>
-              <li><strong>Per-use</strong>: CNY 9.9 per generation, including 20 conversational edits, no expiration;</li>
-              <li><strong>Monthly</strong>: CNY 49 per month, unlimited generations and edits, auto-renews until canceled;</li>
-              <li><strong>Yearly</strong>: CNY 399 per year, unlimited generations and edits, auto-renews until canceled.</li>
+              <li><strong>Starter</strong>: $9.9 / month, 500 credits per month (approximately 50 PPT generations), auto-renews monthly until canceled;</li>
+              <li><strong>Pro</strong>: $19.9 / month, 1,500 credits per month (approximately 150 PPT generations), auto-renews monthly until canceled;</li>
+              <li><strong>Team</strong>: $49.9 / month, 5,000 credits per month (approximately 500 PPT generations), auto-renews monthly until canceled.</li>
             </ul>
             <p>
               Subscriptions are billed automatically by Creem at the start of each billing cycle.
@@ -234,9 +234,9 @@ export default function TermsPage() {
           <Section title="6. Refund Policy">
             <p>We offer the following refund terms:</p>
             <ul>
-              <li><strong>14-day money-back guarantee</strong>: You may request a full refund within 14 days of purchase if you have <strong>not yet consumed</strong> the purchased generations or features.</li>
-              <li><strong>Subscription renewals</strong>: Refundable within 14 days of the renewal date if no paid features were used in that renewal period.</li>
-              <li><strong>Non-refundable cases</strong>: Purchases made more than 14 days ago, packs or memberships where the included generations or chat messages have been used (in whole or in part), and accounts terminated for violation of these Terms.</li>
+              <li><strong>14-day money-back guarantee</strong>: You may request a full refund within 14 days of payment or renewal if you have <strong>not consumed any credits</strong>.</li>
+              <li><strong>Subscription renewals</strong>: Refundable within 14 days of the renewal date if <strong>no credits have been consumed</strong> since the most recent charge.</li>
+              <li><strong>Non-refundable cases</strong>: Orders made more than 14 days ago, subscriptions where any credits in the current billing cycle have already been consumed (including any PPT generation or other paid action), and accounts terminated for violation of these Terms.</li>
             </ul>
             <p>
               To request a refund, email <a href="mailto:support@artifyslide.com">support@artifyslide.com</a> with your order ID and reason.
