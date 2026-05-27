@@ -6,7 +6,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslation } from "@/i18n";
 
 interface PlanDef {
-  id: "starter" | "pro" | "team";
+  id: "starter" | "pro" | "ultra";
   nameKey: string;
   price: string;
   popular?: boolean;
@@ -41,17 +41,17 @@ const plans: PlanDef[] = [
     ],
   },
   {
-    id: "team",
-    nameKey: "pricing.team",
+    id: "ultra",
+    nameKey: "pricing.ultra",
     price: "$49.9",
     featureKeys: [
-      "pricing.teamFeature1",
-      "pricing.teamFeature2",
-      "pricing.teamFeature3",
-      "pricing.teamFeature4",
-      "pricing.teamFeature5",
-      "pricing.teamFeature6",
-      "pricing.teamFeature7",
+      "pricing.ultraFeature1",
+      "pricing.ultraFeature2",
+      "pricing.ultraFeature3",
+      "pricing.ultraFeature4",
+      "pricing.ultraFeature5",
+      "pricing.ultraFeature6",
+      "pricing.ultraFeature7",
     ],
   },
 ];

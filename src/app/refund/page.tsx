@@ -53,7 +53,7 @@ export default function RefundPage() {
                 且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
               <li>
-                <strong>团队版 Team（$49.9 / 月，5,000 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
+                <strong>Ultra（$49.9 / 月，5,000 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
                 且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
             </ul>
@@ -165,7 +165,7 @@ export default function RefundPage() {
                 in the current billing cycle.
               </li>
               <li>
-                <strong>Team ($49.9 / month, 5,000 credits / month)</strong>: Refundable within 14 days of
+                <strong>Ultra ($49.9 / month, 5,000 credits / month)</strong>: Refundable within 14 days of
                 initial payment or auto-renewal, provided <strong>no credits have been consumed</strong>{" "}
                 in the current billing cycle.
               </li>

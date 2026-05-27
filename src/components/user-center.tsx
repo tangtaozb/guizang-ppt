@@ -16,8 +16,7 @@ function planLabelKey(plan: string): string {
     starter: "userCenter.starterPlan",
     monthly: "userCenter.proPlan",
     pro: "userCenter.proPlan",
-    yearly: "userCenter.teamPlan",
-    team: "userCenter.teamPlan",
+    ultra: "userCenter.ultraPlan",
   };
   return map[plan] || "userCenter.freePlan";
 }
