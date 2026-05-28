@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "@/i18n";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteNav } from "@/components/layout/site-nav";
 import { dbGetUser, type DbUserProfile } from "@/lib/db";
 
 type PlanId = "starter" | "pro" | "ultra";
@@ -159,36 +159,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-white text-foreground font-sans">
-      {/* ====== Nav ====== */}
-      <header className="sticky top-0 z-50 h-16 border-b border-border bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-6 sm:px-14">
-          <div className="flex items-center gap-6 sm:gap-12">
-            <Link href="/" className="text-[18px] font-semibold tracking-[-0.02em]">
-              Artify<span className="text-accent">Slide</span>
-            </Link>
-            <nav className="hidden sm:flex gap-7 text-[13.5px] text-muted-foreground">
-              <Link href="/#themes" className="hover:text-foreground transition-colors">
-                {t("nav.themes")}
-              </Link>
-              <Link href="/pricing" className="text-foreground">
-                {t("common.pricing")}
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4 text-[13.5px]">
-            <LanguageSwitcher />
-            <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">
-              {t("common.login")}
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-8 items-center rounded-md bg-foreground px-3.5 text-[13px] font-medium text-white hover:opacity-90 transition-opacity"
-            >
-              {t("nav.startArrow")}
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteNav active="pricing" />
 
       {/* ====== Hero ====== */}
       <section className="mx-auto max-w-[1440px] px-6 sm:px-14 pb-6 pt-20 sm:pt-24 text-center">

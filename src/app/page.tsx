@@ -1,46 +1,28 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "@/i18n";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteNav } from "@/components/layout/site-nav";
 import { THEMES, ThemeThumb } from "@/components/landing/theme-thumb";
+import { dbGetUser, type DbUserProfile } from "@/lib/db";
 
 export default function LandingPage() {
   const { t } = useTranslation();
+  const [user, setUser] = useState<DbUserProfile | null>(null);
+
+  useEffect(() => {
+    dbGetUser()
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, []);
+
+  const startHref = user ? "/dashboard" : "/login";
 
   return (
     <div className="min-h-screen bg-white text-foreground font-sans">
-      {/* ====== Nav ====== */}
-      <header className="sticky top-0 z-50 h-16 border-b border-border bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-6 sm:px-14">
-          <div className="flex items-center gap-6 sm:gap-12">
-            <Link href="/" className="text-[18px] font-semibold tracking-[-0.02em]">
-              Artify<span className="text-accent">Slide</span>
-            </Link>
-            <nav className="hidden sm:flex gap-7 text-[13.5px] text-muted-foreground">
-              <Link href="/#themes" className="hover:text-foreground transition-colors">
-                {t("nav.themes")}
-              </Link>
-              <Link href="/pricing" className="hover:text-foreground transition-colors">
-                {t("common.pricing")}
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4 text-[13.5px]">
-            <LanguageSwitcher />
-            <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">
-              {t("common.login")}
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-8 items-center rounded-md bg-foreground px-3.5 text-[13px] font-medium text-white hover:opacity-90 transition-opacity"
-            >
-              {t("nav.startArrow")}
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteNav active="themes" />
 
       {/* ====== Hero ====== */}
       <section className="mx-auto max-w-[1440px] px-6 sm:px-14 pt-20 sm:pt-30 pb-20 sm:pb-24">
@@ -61,7 +43,7 @@ export default function LandingPage() {
 
         <div className="mt-10 flex flex-wrap items-center gap-3">
           <Link
-            href="/login"
+            href={startHref}
             className="inline-flex h-11 items-center rounded-lg bg-foreground px-5 sm:px-6 text-[15px] font-medium text-white hover:opacity-90 transition-opacity"
           >
             {t("landingX.ctaPrimary")}
@@ -147,7 +129,7 @@ export default function LandingPage() {
         </h2>
         <div className="mt-9 flex flex-wrap justify-center gap-3">
           <Link
-            href="/login"
+            href={startHref}
             className="inline-flex h-12 items-center rounded-lg bg-foreground px-6 sm:px-7 text-[15.5px] font-medium text-white hover:opacity-90 transition-opacity"
           >
             {t("nav.startArrow")}

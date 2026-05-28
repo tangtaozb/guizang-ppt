@@ -90,16 +90,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#fafafa] relative">
-      <div className="absolute top-4 right-4">
+      {/* Top-left logo — 返回首页入口 */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 text-[18px] font-semibold tracking-[-0.02em] hover:opacity-80 transition-opacity"
+      >
+        Artify<span className="text-accent">Slide</span>
+      </Link>
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
         <LanguageSwitcher />
       </div>
       <div className="w-full max-w-sm">
-        {/* Logo */}
+        {/* Subtitle — 中间页 onboarding 提示 */}
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold tracking-tight">
-            Artify<span className="text-accent">Slide</span>
-          </Link>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-muted-foreground">
             {t("login.subtitle")}
           </p>
         </div>

@@ -41,14 +41,6 @@ function getThemeDot(t: Theme): string {
   return t.ink;
 }
 
-const EXAMPLE_TEMPLATES: { id: string; titleZh: string; titleEn: string; tagZh: string; tagEn: string; color: string }[] = [
-  { id: "ex1", titleZh: "年度商业计划书", titleEn: "Annual business plan", tagZh: "商业", tagEn: "Business", color: "#0a1f3d" },
-  { id: "ex2", titleZh: "产品发布会演示", titleEn: "Product launch deck", tagZh: "产品", tagEn: "Product", color: "#1a2e1f" },
-  { id: "ex3", titleZh: "团队季度复盘", titleEn: "Quarterly team review", tagZh: "管理", tagEn: "Mgmt", color: "#2a1e13" },
-  { id: "ex4", titleZh: "技术架构分享", titleEn: "Tech architecture talk", tagZh: "技术", tagEn: "Tech", color: "#0a0a0b" },
-  { id: "ex5", titleZh: "品牌故事叙述", titleEn: "Brand storytelling", tagZh: "品牌", tagEn: "Brand", color: "#1f1a14" },
-];
-
 function ConfirmModal({
   title,
   message,
@@ -245,9 +237,9 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <main className="flex-1 flex flex-col items-center px-6">
+      <main className="flex-1 flex flex-col items-center px-6 pb-20">
         {/* Hero input area */}
-        <div className="w-full max-w-2xl pt-16 pb-10">
+        <div className="w-full max-w-2xl pt-24 sm:pt-32 pb-10">
           <h1 className="text-2xl font-bold text-center mb-8">
             {t("dashboard.heroTitle")}
           </h1>
@@ -418,42 +410,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Example templates */}
-        <div className="w-full max-w-5xl pb-16">
-          <h2 className="text-sm font-semibold text-foreground mb-4">
-            {projects.length > 0 ? t("dashboard.exampleTemplates") : t("dashboard.exampleTemplatesClick")}
-          </h2>
-          <div className="grid grid-cols-5 gap-3">
-            {EXAMPLE_TEMPLATES.map((ex) => {
-              const title = locale === "zh" ? ex.titleZh : ex.titleEn;
-              const tag = locale === "zh" ? ex.tagZh : ex.tagEn;
-              return (
-                <div
-                  key={ex.id}
-                  className="group rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                >
-                  <div
-                    className="aspect-[16/10] flex items-center justify-center relative"
-                    style={{ backgroundColor: ex.color }}
-                  >
-                    <span className="text-xs font-serif font-bold px-3 text-center leading-snug text-white/90">
-                      {title}
-                    </span>
-                    <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded bg-white/20 text-white/70 backdrop-blur-sm">
-                      {tag}
-                    </span>
-                  </div>
-                  <div className="px-3 py-2.5 bg-white">
-                    <h3 className="font-medium text-xs truncate group-hover:text-accent transition-colors">
-                      {title}
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mt-1">{t("dashboard.caseTemplate")}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </main>
 
       {/* Delete confirm */}
