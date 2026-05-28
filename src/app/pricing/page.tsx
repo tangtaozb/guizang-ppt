@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -58,6 +60,35 @@ const plans: PlanDef[] = [
 
 export default function PricingPage() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+
+  async function handleSubscribe(planId: string) {
+    setErrMsg(null);
+    setLoadingPlan(planId);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      if (res.status === 401) {
+        // 未登录，跳到登录页并带回跳
+        router.push(`/login?next=/pricing`);
+        return;
+      }
+      const json = await res.json();
+      if (!res.ok || !json.url) {
+        throw new Error(json.error || "创建 Checkout 失败");
+      }
+      window.location.href = json.url;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrMsg(msg);
+      setLoadingPlan(null);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -117,19 +148,25 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href="/login"
-                  className={`w-full py-2.5 rounded-lg text-sm font-medium text-center transition-all ${
+                <button
+                  type="button"
+                  onClick={() => handleSubscribe(plan.id)}
+                  disabled={loadingPlan !== null}
+                  className={`w-full py-2.5 rounded-lg text-sm font-medium text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     plan.popular
                       ? "bg-accent text-accent-foreground hover:opacity-90"
                       : "border border-border hover:bg-muted"
                   }`}
                 >
-                  {t("pricing.subscribe")}
-                </Link>
+                  {loadingPlan === plan.id ? "…" : t("pricing.subscribe")}
+                </button>
               </div>
             ))}
           </div>
+
+          {errMsg && (
+            <p className="mt-6 text-center text-sm text-red-500">{errMsg}</p>
+          )}
 
           <p className="mt-10 text-center text-xs text-muted-foreground max-w-2xl mx-auto">
             {t("pricing.creditExplain")}

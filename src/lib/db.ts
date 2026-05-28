@@ -29,7 +29,7 @@ export interface DbUserProfile {
   email: string;
   phone: string;
   nickname: string;
-  plan: "free" | "per_use" | "monthly" | "yearly";
+  plan: "free" | "starter" | "pro" | "ultra";
   credits: number;
   createdAt: string;
 }
