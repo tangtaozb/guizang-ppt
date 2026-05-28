@@ -1,147 +1,179 @@
 "use client";
 
 import Link from "next/link";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslation } from "@/i18n";
-
-const demos = [
-  { themeKey: "themes.inkClassic", color: "#0a0a0b", bg: "#f1efea" },
-  { themeKey: "themes.indigo", color: "#0a1f3d", bg: "#f1f3f5" },
-  { themeKey: "themes.forest", color: "#1a2e1f", bg: "#f5f1e8" },
-  { themeKey: "themes.kraft", color: "#2a1e13", bg: "#eedfc7" },
-  { themeKey: "themes.dune", color: "#1f1a14", bg: "#f0e6d2" },
-];
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { THEMES, ThemeThumb } from "@/components/landing/theme-thumb";
 
 export default function LandingPage() {
   const { t } = useTranslation();
-  const features = [
-    { icon: "✦", title: t("landing.feature1Title"), desc: t("landing.feature1Desc") },
-    { icon: "⚡", title: t("landing.feature2Title"), desc: t("landing.feature2Desc") },
-    { icon: "🎨", title: t("landing.feature3Title"), desc: t("landing.feature3Desc") },
-    { icon: "💬", title: t("landing.feature4Title"), desc: t("landing.feature4Desc") },
-    { icon: "↔", title: t("landing.feature5Title"), desc: t("landing.feature5Desc") },
-    { icon: "📦", title: t("landing.feature6Title"), desc: t("landing.feature6Desc") },
-  ];
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto max-w-6xl flex items-center justify-between px-6 h-14">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            Artify<span className="text-accent">Slide</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t("common.pricing")}
+    <div className="min-h-screen bg-white text-foreground font-sans">
+      {/* ====== Nav ====== */}
+      <header className="sticky top-0 z-50 h-16 border-b border-border bg-white/90 backdrop-blur">
+        <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-6 sm:px-14">
+          <div className="flex items-center gap-6 sm:gap-12">
+            <Link href="/" className="text-[18px] font-semibold tracking-[-0.02em]">
+              Artify<span className="text-accent">Slide</span>
             </Link>
+            <nav className="hidden sm:flex gap-7 text-[13.5px] text-muted-foreground">
+              <Link href="/#themes" className="hover:text-foreground transition-colors">
+                {t("nav.themes")}
+              </Link>
+              <Link href="/pricing" className="hover:text-foreground transition-colors">
+                {t("common.pricing")}
+              </Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-3 sm:gap-4 text-[13.5px]">
             <LanguageSwitcher />
+            <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">
+              {t("common.login")}
+            </Link>
             <Link
               href="/login"
-              className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+              className="inline-flex h-8 items-center rounded-md bg-foreground px-3.5 text-[13px] font-medium text-white hover:opacity-90 transition-opacity"
             >
-              {t("common.getStarted")}
+              {t("nav.startArrow")}
             </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <section className="flex-1 flex flex-col items-center justify-center px-6 py-24 bg-gradient-to-b from-white to-muted">
-        <div className="max-w-3xl text-center">
-          <div className="inline-block mb-6 px-3 py-1 rounded-full border border-border text-xs text-muted-foreground">
-            AI × Magazine × Presentation
-          </div>
-          <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight mb-6">
-            {t("landing.heroTitle")}
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-            {t("landing.heroSubtitle")}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-8 py-3 bg-primary text-primary-foreground rounded-lg text-base font-medium hover:opacity-90 transition-opacity"
-            >
-              {t("landing.ctaPrimary")}
-            </Link>
-            <Link
-              href="/pricing"
-              className="w-full sm:w-auto px-8 py-3 border border-border rounded-lg text-base font-medium hover:bg-muted transition-colors"
-            >
-              {t("landing.ctaSecondary")}
-            </Link>
-          </div>
+      {/* ====== Hero ====== */}
+      <section className="mx-auto max-w-[1440px] px-6 sm:px-14 pt-20 sm:pt-30 pb-20 sm:pb-24">
+        <div className="flex items-center gap-2.5 font-mono text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          {t("landingX.heroKicker")}
         </div>
-      </section>
 
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">{t("landing.sectionStylesTitle")}</h2>
-          <p className="text-muted-foreground text-center mb-12">
-            {t("landing.sectionStylesDesc")}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            {demos.map((d) => (
-              <div
-                key={d.themeKey}
-                className="rounded-xl overflow-hidden border border-border hover:shadow-lg transition-shadow"
-              >
-                <div
-                  className="h-32 flex items-end p-4"
-                  style={{ backgroundColor: d.bg }}
-                >
-                  <span
-                    className="text-2xl font-serif font-bold"
-                    style={{ color: d.color }}
-                  >
-                    Aa
-                  </span>
-                </div>
-                <div className="px-4 py-3 bg-white">
-                  <p className="text-sm font-medium">{t(d.themeKey)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        <h1 className="mt-6 max-w-[1180px] text-[48px] sm:text-[72px] lg:text-[104px] font-medium leading-[0.94] tracking-[-0.045em]">
+          {t("landingX.heroTitle1")}
+          <br />
+          <span className="text-muted-foreground font-serif">{t("landingX.heroTitle2")}</span>
+        </h1>
 
-      <section className="py-20 px-6 bg-muted">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">{t("common.features")}</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                className="bg-white rounded-xl p-6 border border-border hover:shadow-md transition-shadow"
-              >
-                <div className="text-2xl mb-4">{f.icon}</div>
-                <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {f.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        <p className="mt-8 max-w-[620px] text-[17px] sm:text-[19px] leading-[1.55] text-neutral-700">
+          {t("landingX.heroLede")}
+        </p>
 
-      <section className="py-20 px-6 bg-primary text-primary-foreground">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">{t("landing.finalCtaTitle")}</h2>
-          <p className="text-primary-foreground/70 mb-8">
-            {t("landing.finalCtaDesc")}
-          </p>
+        <div className="mt-10 flex flex-wrap items-center gap-3">
           <Link
             href="/login"
-            className="inline-block px-8 py-3 bg-white text-primary rounded-lg text-base font-medium hover:bg-white/90 transition-colors"
+            className="inline-flex h-11 items-center rounded-lg bg-foreground px-5 sm:px-6 text-[15px] font-medium text-white hover:opacity-90 transition-opacity"
           >
-            {t("landing.finalCtaButton")}
+            {t("landingX.ctaPrimary")}
+          </Link>
+          <a
+            href="#themes"
+            className="inline-flex h-11 items-center rounded-lg border border-border bg-white px-4.5 text-[15px] font-medium hover:bg-muted transition-colors"
+          >
+            {t("landingX.ctaSecondary")}
+          </a>
+        </div>
+      </section>
+
+      {/* ====== Theme grid ====== */}
+      <section id="themes" className="mx-auto max-w-[1440px] px-6 sm:px-14 pb-24 pt-6">
+        <div className="mb-6 flex items-baseline justify-between border-t border-border pt-6">
+          <div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              {t("landingX.themesKicker")}
+            </div>
+            <div className="mt-1.5 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]">
+              {t("landingX.themesTitle")}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {THEMES.map((th) => (
+            <div key={th.id} className="flex flex-col gap-2.5">
+              <div className="w-full">
+                <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
+                  <div className="absolute inset-0">
+                    <ThemeThumb theme={th} width={428} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-baseline justify-between pt-1">
+                <span className="text-[14px]">{th.zh}</span>
+                <span className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-muted-foreground">
+                  {th.en}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ====== 3 reasons ====== */}
+      <section className="border-t border-border bg-muted py-18">
+        <div className="mx-auto grid max-w-[1440px] grid-cols-1 lg:grid-cols-[240px_1fr] gap-10 lg:gap-14 px-6 sm:px-14">
+          <div className="pt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            {t("landingX.whyKicker")}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-9">
+            <FeatureCard
+              n="01"
+              title={t("landingX.why1Title")}
+              body={t("landingX.why1Body")}
+            />
+            <FeatureCard
+              n="02"
+              title={t("landingX.why2Title")}
+              body={t("landingX.why2Body")}
+            />
+            <FeatureCard
+              n="03"
+              title={t("landingX.why3Title")}
+              body={t("landingX.why3Body")}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ====== Final CTA ====== */}
+      <section className="border-t border-border py-24 sm:py-28 text-center px-6">
+        <div className="font-mono text-[11.5px] uppercase tracking-[0.18em] text-muted-foreground">
+          {t("landingX.finalKicker")}
+        </div>
+        <h2 className="mt-6 text-[48px] sm:text-[60px] lg:text-[76px] font-medium leading-none tracking-[-0.04em]">
+          {t("landingX.finalTitle1")}
+          <br />
+          <span className="font-serif text-muted-foreground">{t("landingX.finalTitle2")}</span>
+        </h2>
+        <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/login"
+            className="inline-flex h-12 items-center rounded-lg bg-foreground px-6 sm:px-7 text-[15.5px] font-medium text-white hover:opacity-90 transition-opacity"
+          >
+            {t("nav.startArrow")}
+          </Link>
+          <Link
+            href="/pricing"
+            className="inline-flex h-12 items-center rounded-lg border border-border bg-white px-5 sm:px-6 text-[15.5px] font-medium hover:bg-muted transition-colors"
+          >
+            {t("common.pricing")}
           </Link>
         </div>
       </section>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+function FeatureCard({ n, title, body }: { n: string; title: string; body: string }) {
+  return (
+    <div>
+      <div className="mb-5 grid h-14 w-14 place-items-center rounded-lg border border-border bg-white">
+        <span className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground">/{n}</span>
+      </div>
+      <div className="mb-2.5 text-[19px] font-medium tracking-[-0.01em]">{title}</div>
+      <div className="text-[14px] leading-[1.6] text-neutral-600">{body}</div>
     </div>
   );
 }

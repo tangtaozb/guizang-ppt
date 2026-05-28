@@ -8,10 +8,17 @@
   --border: #e5e5e5;
   --primary: #0a0a0b;
   --primary-foreground: #ffffff;
-  --accent: #6366f1;
+  --accent: #a72f24;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --radius: 0.5rem;
+
+  /* 编辑感色板（杂志/衬线场景用） */
+  --paper-warm: #f6f3ec;
+  --card-warm: #fefcf6;
+  --ink: #141210;
+  --ink-soft: #6b6660;
+  --hairline: #1412101a;
 }
 
 @theme inline {
@@ -25,13 +32,32 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-paper-warm: var(--paper-warm);
+  --color-card-warm: var(--card-warm);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-hairline: var(--hairline);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-instrument-serif), "Instrument Serif", "Noto Serif SC", "Songti SC", serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+@layer utilities {
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+  .hairline {
+    border-color: var(--hairline);
+  }
+  .paper-warm {
+    background: var(--paper-warm);
+    color: var(--ink);
+  }
 }
 
 .split-pane {

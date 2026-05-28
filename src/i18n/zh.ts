@@ -214,6 +214,97 @@ export const zh = {
     privacy: "隐私政策",
     refund: "退款政策",
   },
+  nav: {
+    themes: "主题",
+    startArrow: "开始创作 →",
+  },
+  landingX: {
+    // 新版 Landing 设计稿专用（与旧 landing.* 共存，旧 keys 还在被 dashboard 等地方使用）
+    heroKicker: "ARTIFYSLIDE · 杂志感 × 瑞士设计",
+    heroTitle1: "把文字变成",
+    heroTitle2: "精致的演示文稿。",
+    heroLede: "粘贴一段文字，ArtifySlide 用杂志感和瑞士设计的排版语法，生成可对话编辑的横向翻页 HTML 演示文稿。下载即用，无需安装。",
+    ctaPrimary: "开始创作 →",
+    ctaSecondary: "看看 9 套主题 ↓",
+
+    themesKicker: "[ 01 ] —— 9 套预设主题",
+    themesTitle: "不是模板，是九种编辑视角。",
+
+    whyKicker: "[ 02 ] —— 三个为什么",
+    why1Title: "排版引擎，不是模板",
+    why1Body: "每一张幻灯片走的是网格、字阶、对位的算法，不是模板硬塞。九种排版语言，从《纽约客》到瑞士国际主义。",
+    why2Title: "对话式编辑",
+    why2Body: "「把第 3 页换成数据对比」「标题改成更克制」「配色换成牛皮纸」——用自然语言改稿，每一次修改可回滚。",
+    why3Title: "独立 HTML 交付",
+    why3Body: "下载一个 .html 文件，离线播放、键盘翻页、打印 PDF 全都自带。不依赖账户、不依赖云。",
+
+    finalKicker: "—— READY WHEN YOU ARE ——",
+    finalTitle1: "粘上文字，",
+    finalTitle2: "拿走一份演示。",
+  },
+  pricingX: {
+    // 新版 Pricing 设计稿专用
+    kicker: "—— PRICING · 三档套餐 ——",
+    title1: "按月订阅，",
+    title2: "用积分。",
+    lede: "每生成一份 PPT 25 积分，每一次对话式编辑 18 积分。积分按月发放，用完即止。",
+
+    starterTagline: "够你认真试一阵子",
+    proTagline: "每积分单价最低",
+    proBadge: "★ 性价比之选",
+    ultraTagline: "高频出稿 & 工作室",
+
+    starterBullet1: "4,500 积分 / 月",
+    starterBullet2: "约 180 份 PPT、或 250 次对话编辑",
+    starterBullet3: "9 套主题全部可用",
+    starterBullet4: "对话式编辑",
+    starterBullet5: "独立 HTML 导出",
+
+    proBullet1: "10,000 积分 / 月",
+    proBullet2: "约 400 份 PPT、或 555 次对话编辑",
+    proBullet3: "9 套主题全部可用",
+    proBullet4: "对话式编辑",
+    proBullet5: "独立 HTML 导出",
+    proBullet6: "积分单价比 Starter 低约 10%",
+
+    ultraBullet1: "25,000 积分 / 月",
+    ultraBullet2: "约 1,000 份 PPT、或 1,388 次对话编辑",
+    ultraBullet3: "9 套主题全部可用",
+    ultraBullet4: "对话式编辑",
+    ultraBullet5: "独立 HTML 导出",
+
+    cardsFootnote: "· 结算由 Creem.io 提供 · 订阅可随时取消 · 退款详见 Refund 政策 ·",
+
+    calcKicker: "[ 03 ] —— 积分换算",
+    calcTitle1: "一份 deck",
+    calcTitle2: "到底多少钱？",
+    calcLede: "25 积分 = 一份完整 PPT。18 积分 = 一次对话式修改。",
+    calcDeckPerMonth: "/ 月",
+    calcPerDeck: "/ deck",
+
+    faqKicker: "[ 04 ] —— FAQ",
+    faqTitle1: "先看看，",
+    faqTitle2: "可能你已经问过。",
+    faqExpiryQ: "积分用不完会清零吗？",
+    faqExpiryA: "月度积分按订阅周期清零；未用完部分不顺延至下个周期。",
+    faqCancelQ: "可以随时取消订阅吗？",
+    faqCancelA: "可以。从订阅管理页一键取消；本周期内仍可继续使用。",
+    faqReeditQ: "导出的 HTML 可以二次编辑吗？",
+    faqReeditA: "可以。导出的是结构化 HTML + CSS，能用任何编辑器继续调整。",
+    faqTopupQ: "积分不够用怎么办？",
+    faqTopupA: "可随时升档，差额按订阅剩余天数自动抵扣。",
+    faqPaymentQ: "支持哪些支付方式？可以退款吗？",
+    faqPaymentA: "结算通过 Creem.io（Merchant of Record）。退款条款详见 Refund 页面。",
+  },
+  footer: {
+    tagline: "把文字变成精致的演示文稿。杂志感 × 瑞士设计 × 对话式编辑。",
+    colProduct: "产品",
+    colLegal: "法律",
+    colLang: "语言",
+    copyright: "© 2026 · ARTIFYSLIDE",
+    madeWith: "· Made with attention ·",
+    billedVia: "Billed via Creem.io",
+  },
 };
 
 export type Dict = typeof zh;
