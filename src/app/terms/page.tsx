@@ -82,9 +82,9 @@ export default function TermsPage() {
             </p>
             <p>当前提供的计费方式包括：</p>
             <ul>
-              <li><strong>入门版（Starter）</strong>：$9.9 / 月，每月 500 积分（约可生成 50 份 PPT），月度自动续费至取消；</li>
-              <li><strong>专业版（Pro）</strong>：$19.9 / 月，每月 1500 积分（约可生成 150 份 PPT），月度自动续费至取消；</li>
-              <li><strong>Ultra</strong>：$49.9 / 月，每月 5000 积分（约可生成 500 份 PPT），月度自动续费至取消。</li>
+              <li><strong>入门版（Starter）</strong>：$9.9 / 月，每月 4,500 积分（约可生成 180 份 PPT），月度自动续费至取消；</li>
+              <li><strong>专业版（Pro）</strong>：$19.9 / 月，每月 10,000 积分（约可生成 400 份 PPT），月度自动续费至取消；</li>
+              <li><strong>Ultra</strong>：$49.9 / 月，每月 25,000 积分（约可生成 1,000 份 PPT），月度自动续费至取消。</li>
             </ul>
             <p>
               订阅在每个计费周期开始时通过 Creem 自动扣款。你可随时在账户中取消订阅，取消后服务将持续到当前计费周期结束。
@@ -220,9 +220,9 @@ export default function TermsPage() {
             </p>
             <p>Current pricing options:</p>
             <ul>
-              <li><strong>Starter</strong>: $9.9 / month, 500 credits per month (approximately 50 PPT generations), auto-renews monthly until canceled;</li>
-              <li><strong>Pro</strong>: $19.9 / month, 1,500 credits per month (approximately 150 PPT generations), auto-renews monthly until canceled;</li>
-              <li><strong>Ultra</strong>: $49.9 / month, 5,000 credits per month (approximately 500 PPT generations), auto-renews monthly until canceled.</li>
+              <li><strong>Starter</strong>: $9.9 / month, 4,500 credits per month (approximately 180 deck generations), auto-renews monthly until canceled;</li>
+              <li><strong>Pro</strong>: $19.9 / month, 10,000 credits per month (approximately 400 deck generations), auto-renews monthly until canceled;</li>
+              <li><strong>Ultra</strong>: $49.9 / month, 25,000 credits per month (approximately 1,000 deck generations), auto-renews monthly until canceled.</li>
             </ul>
             <p>
               Subscriptions are billed automatically by Creem at the start of each billing cycle.

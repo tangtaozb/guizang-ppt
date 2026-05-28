@@ -45,15 +45,15 @@ export default function RefundPage() {
           <Section title="2. 各计费方式的退款条件">
             <ul>
               <li>
-                <strong>入门版 Starter（$9.9 / 月，500 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
+                <strong>入门版 Starter（$9.9 / 月，4,500 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
                 且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
               <li>
-                <strong>专业版 Pro（$19.9 / 月，1,500 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
+                <strong>专业版 Pro（$19.9 / 月，10,000 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
                 且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
               <li>
-                <strong>Ultra（$49.9 / 月，5,000 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
+                <strong>Ultra（$49.9 / 月，25,000 积分 / 月）</strong>：首次付款或自动续费成功后 14 天内、
                 且自该计费周期起<strong>未消耗任何积分</strong>的，可全额退款。
               </li>
             </ul>
@@ -155,17 +155,17 @@ export default function RefundPage() {
           <Section title="2. Refund Eligibility by Plan">
             <ul>
               <li>
-                <strong>Starter ($9.9 / month, 500 credits / month)</strong>: Refundable within 14 days of
+                <strong>Starter ($9.9 / month, 4,500 credits / month)</strong>: Refundable within 14 days of
                 initial payment or auto-renewal, provided <strong>no credits have been consumed</strong>{" "}
                 in the current billing cycle.
               </li>
               <li>
-                <strong>Pro ($19.9 / month, 1,500 credits / month)</strong>: Refundable within 14 days of
+                <strong>Pro ($19.9 / month, 10,000 credits / month)</strong>: Refundable within 14 days of
                 initial payment or auto-renewal, provided <strong>no credits have been consumed</strong>{" "}
                 in the current billing cycle.
               </li>
               <li>
-                <strong>Ultra ($49.9 / month, 5,000 credits / month)</strong>: Refundable within 14 days of
+                <strong>Ultra ($49.9 / month, 25,000 credits / month)</strong>: Refundable within 14 days of
                 initial payment or auto-renewal, provided <strong>no credits have been consumed</strong>{" "}
                 in the current billing cycle.
               </li>
