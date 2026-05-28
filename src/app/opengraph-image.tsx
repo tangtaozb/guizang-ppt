@@ -44,7 +44,7 @@ export default function OpengraphImage() {
             />
             ARTIFYSLIDE · MAGAZINE × SWISS DESIGN
           </div>
-          <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: "-0.02em" }}>
+          <div style={{ display: "flex", fontSize: 26, fontWeight: 600, letterSpacing: "-0.02em" }}>
             Artify<span style={{ color: "#a72f24" }}>Slide</span>
           </div>
         </div>
