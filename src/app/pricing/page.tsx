@@ -90,6 +90,7 @@ export default function PricingPage() {
   const [user, setUser] = useState<DbUserProfile | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     dbGetUser()
@@ -123,18 +124,10 @@ export default function PricingPage() {
   }
 
   async function handleUpgrade(planId: PlanId) {
-    const planName = t(plans.find((p) => p.id === planId)?.nameKey || "");
-    if (
-      !window.confirm(
-        t("pricing.upgradeConfirmTitle").replace("{plan}", planName) +
-          "\n\n" +
-          t("pricing.upgradeConfirmBody")
-      )
-    ) {
-      return;
-    }
     setErrMsg(null);
+    setSuccessMsg(null);
     setLoadingPlan(planId);
+    const planName = t(plans.find((p) => p.id === planId)?.nameKey || "");
     try {
       const res = await fetch("/api/subscription/upgrade", {
         method: "POST",
@@ -143,9 +136,15 @@ export default function PricingPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "升级失败");
-      // 升级成功，刷新用户数据
+
+      // Creem 用已绑定卡按剩余天数自动扣差额，无需重新输卡
+      // 等 webhook 写库（一般 1-3 秒）后再刷新用户数据
+      await new Promise((r) => setTimeout(r, 2500));
       const updated = await dbGetUser();
       setUser(updated);
+      setSuccessMsg(
+        t("pricing.upgradeSuccess").replace("{plan}", planName)
+      );
       setLoadingPlan(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -255,6 +254,9 @@ export default function PricingPage() {
 
           {errMsg && (
             <p className="mt-6 text-center text-sm text-red-500">{errMsg}</p>
+          )}
+          {successMsg && (
+            <p className="mt-6 text-center text-sm text-green-600">{successMsg}</p>
           )}
 
           {discount > 0.01 && (
