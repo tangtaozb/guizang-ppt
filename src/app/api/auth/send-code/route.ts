@@ -76,13 +76,25 @@ export async function POST(req: NextRequest) {
       if (!res.ok) {
         const errText = await res.text();
         console.error("[Resend] send failed:", errText);
+        // Fallback for admin emails when Resend is misconfigured —
+        // allows the operator to keep using the product while domain verification
+        // is in progress. Strictly limited to OPERATOR_FALLBACK_EMAILS allowlist.
+        const fallbackList = (process.env.OPERATOR_FALLBACK_EMAILS || "")
+          .split(",")
+          .map((e) => e.trim().toLowerCase())
+          .filter(Boolean);
+        if (fallbackList.includes(trimmedEmail.toLowerCase())) {
+          console.warn(`[send-code] Resend failed, returning OTP inline for operator ${trimmedEmail}`);
+          return NextResponse.json({ success: true, otp });
+        }
         return NextResponse.json({ error: "发送邮件失败，请重试" }, { status: 500 });
       }
 
       return NextResponse.json({ success: true });
     }
 
-    // 4. No email service — dev mode: return OTP directly
+    // No email service configured — return OTP directly so login can complete.
+    // Acceptable for early-access / closed beta, not for public launch.
     console.log(`[DEV] OTP for ${trimmedEmail}: ${otp}`);
     return NextResponse.json({ success: true, otp });
   } catch (e) {
