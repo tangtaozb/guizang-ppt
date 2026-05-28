@@ -7,6 +7,7 @@ import { useTranslation } from "@/i18n";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNav } from "@/components/layout/site-nav";
 import { dbGetUser, type DbUserProfile } from "@/lib/db";
+import { JsonLd, pricingFaqSchema } from "@/components/seo/json-ld";
 
 type PlanId = "starter" | "pro" | "ultra";
 type CardAction = "subscribe" | "current" | "upgrade" | "downgrade";
@@ -157,8 +158,16 @@ export default function PricingPage() {
     }
   }
 
+  const faqSchemaData = pricingFaqSchema(
+    (["expiry", "cancel", "reedit", "topup", "payment"] as const).map((k) => ({
+      q: t(`pricingX.faq${k.charAt(0).toUpperCase()}${k.slice(1)}Q`),
+      a: t(`pricingX.faq${k.charAt(0).toUpperCase()}${k.slice(1)}A`),
+    }))
+  );
+
   return (
     <div className="min-h-screen bg-white text-foreground font-sans">
+      <JsonLd data={faqSchemaData} />
       <SiteNav active="pricing" />
 
       {/* ====== Hero ====== */}

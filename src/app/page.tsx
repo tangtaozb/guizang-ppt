@@ -7,6 +7,12 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNav } from "@/components/layout/site-nav";
 import { THEMES, ThemeThumb } from "@/components/landing/theme-thumb";
 import { dbGetUser, type DbUserProfile } from "@/lib/db";
+import {
+  JsonLd,
+  organizationSchema,
+  softwareApplicationSchema,
+  websiteSchema,
+} from "@/components/seo/json-ld";
 
 export default function LandingPage() {
   const { t } = useTranslation();
@@ -22,6 +28,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-foreground font-sans">
+      <JsonLd data={[organizationSchema, softwareApplicationSchema, websiteSchema]} />
       <SiteNav active="themes" />
 
       {/* ====== Hero ====== */}
