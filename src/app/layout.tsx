@@ -19,9 +19,65 @@ const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://www.artifyslide.com";
+
 export const metadata: Metadata = {
-  title: "Artify Slide - AI 杂志风演示文稿",
-  description: "用 AI 生成精美的杂志风横向翻页 PPT，支持在线预览和下载",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "ArtifySlide — AI 高级杂志风格 PPT 生成器",
+    template: "%s · ArtifySlide",
+  },
+  description:
+    "粘贴文字，ArtifySlide 用杂志感和瑞士设计的排版语法，生成可对话编辑的横向翻页 HTML 演示文稿。9 套编辑风格主题，单文件下载，无需安装。",
+  keywords: [
+    "AI PPT",
+    "AI 演示文稿",
+    "AI presentation generator",
+    "magazine style PPT",
+    "杂志风 PPT",
+    "AI 生成 PPT",
+    "HTML 演示文稿",
+    "horizontal slide deck",
+  ],
+  authors: [{ name: "ArtifySlide" }],
+  creator: "ArtifySlide",
+  publisher: "ArtifySlide",
+  alternates: {
+    canonical: "/",
+    languages: {
+      "zh-CN": "/",
+      "en-US": "/",
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "zh_CN",
+    alternateLocale: ["en_US"],
+    url: SITE_URL,
+    siteName: "ArtifySlide",
+    title: "ArtifySlide — AI 高级杂志风格 PPT 生成器",
+    description:
+      "粘贴文字，AI 自动生成杂志风格 HTML 演示文稿。可对话编辑，9 套编辑级主题，单文件下载。",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@ArtifySlide",
+    creator: "@ArtifySlide",
+    title: "ArtifySlide — AI 高级杂志风格 PPT 生成器",
+    description:
+      "粘贴文字，AI 自动生成杂志风格 HTML 演示文稿。可对话编辑，9 套编辑级主题，单文件下载。",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  category: "technology",
 };
 
 export default function RootLayout({

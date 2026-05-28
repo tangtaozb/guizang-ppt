@@ -58,11 +58,11 @@ function TrendChart({ data }: { data: { date: string; newUsers: number; newProje
       <div className="flex items-center gap-4 mb-3 text-xs">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" />
-          <span className="text-zinc-700">New users</span>
+          <span className="text-zinc-700">新增用户</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />
-          <span className="text-zinc-700">New projects</span>
+          <span className="text-zinc-700">新增项目</span>
         </div>
       </div>
       <svg viewBox="0 0 100 30" className="w-full h-32" preserveAspectRatio="none">
@@ -82,7 +82,7 @@ function TrendChart({ data }: { data: { date: string; newUsers: number; newProje
                 fill="#3b82f6"
                 opacity="0.85"
               >
-                <title>{`${d.date}: ${d.newUsers} users`}</title>
+                <title>{`${d.date}：新增用户 ${d.newUsers}`}</title>
               </rect>
               <rect
                 x={x + gap + barW + 0.5}
@@ -92,7 +92,7 @@ function TrendChart({ data }: { data: { date: string; newUsers: number; newProje
                 fill="#f59e0b"
                 opacity="0.85"
               >
-                <title>{`${d.date}: ${d.newProjects} projects`}</title>
+                <title>{`${d.date}：新增项目 ${d.newProjects}`}</title>
               </rect>
             </g>
           );
@@ -129,7 +129,7 @@ export default function AdminMetricsPage() {
         return;
       }
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Request failed");
+      if (!res.ok) throw new Error(json.error || "请求失败");
       setData(json);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -145,17 +145,20 @@ export default function AdminMetricsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center text-sm text-zinc-500">
-        Loading metrics…
+        加载中…
       </div>
     );
   }
 
   if (err) {
+    const isForbidden = err.includes("Forbidden") || err.includes("not in ADMIN_EMAILS");
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-6">
         <div className="bg-white rounded-lg border border-red-200 p-6 max-w-md">
-          <div className="text-sm font-semibold text-red-600 mb-2">Error</div>
-          <div className="text-sm text-zinc-700">{err}</div>
+          <div className="text-sm font-semibold text-red-600 mb-2">出错</div>
+          <div className="text-sm text-zinc-700">
+            {isForbidden ? "禁止访问 — 当前账号不在管理员白名单中" : err}
+          </div>
         </div>
       </div>
     );
@@ -163,7 +166,7 @@ export default function AdminMetricsPage() {
 
   if (!data) return null;
 
-  const ts = new Date(data.generatedAt).toLocaleString("en-US", {
+  const ts = new Date(data.generatedAt).toLocaleString("zh-CN", {
     timeZone: "Asia/Shanghai",
     hour12: false,
   });
@@ -173,79 +176,79 @@ export default function AdminMetricsPage() {
       <div className="max-w-5xl mx-auto px-6 py-10">
         <header className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Admin Metrics</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">数据看板</h1>
             <p className="text-xs text-zinc-500 mt-1 font-mono">
-              {ts} CST · auto-refresh disabled · internal only
+              {ts} 北京时间 · 不自动刷新 · 仅内部使用
             </p>
           </div>
           <button
             onClick={load}
             className="h-9 px-3 rounded-md bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-700"
           >
-            Refresh
+            刷新
           </button>
         </header>
 
         {/* Users */}
-        <Section title="Users">
+        <Section title="用户">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Stat label="Total users" value={data.users.total} sub={`+${data.users.today} today · +${data.users.last7days} this week`} />
-            <Stat label="Paid users" value={data.users.paid} sub={`${data.users.conversionRate}% conversion`} />
-            <Stat label="Free" value={data.users.planDistribution.free || 0} />
-            <Stat label="Credits held" value={data.users.totalCreditsHeld.toLocaleString()} sub="across all users" />
+            <Stat label="累计用户" value={data.users.total} sub={`今日 +${data.users.today} · 近 7 天 +${data.users.last7days}`} />
+            <Stat label="付费用户" value={data.users.paid} sub={`付费转化率 ${data.users.conversionRate}%`} />
+            <Stat label="免费用户" value={data.users.planDistribution.free || 0} />
+            <Stat label="积分总持仓" value={data.users.totalCreditsHeld.toLocaleString()} sub="全部用户合计" />
           </div>
         </Section>
 
         {/* Revenue */}
-        <Section title="Revenue (MRR estimate)">
+        <Section title="营收（MRR 估算）">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Stat
-              label="MRR"
+              label="月度循环收入"
               value={`$${data.revenue.mrrUSD.toFixed(2)}`}
-              sub={`ARR ≈ $${(data.revenue.mrrUSD * 12).toFixed(2)}`}
+              sub={`年化 ≈ $${(data.revenue.mrrUSD * 12).toFixed(2)}`}
             />
             <Stat
-              label="Starter ($9.9)"
+              label="入门版 Starter（$9.9）"
               value={data.revenue.byPlan.starter?.count || 0}
-              sub={`$${(data.revenue.byPlan.starter?.mrrUSD || 0).toFixed(2)}/mo`}
+              sub={`$${(data.revenue.byPlan.starter?.mrrUSD || 0).toFixed(2)} / 月`}
             />
             <Stat
-              label="Pro ($19.9)"
+              label="专业版 Pro（$19.9）"
               value={data.revenue.byPlan.pro?.count || 0}
-              sub={`$${(data.revenue.byPlan.pro?.mrrUSD || 0).toFixed(2)}/mo`}
+              sub={`$${(data.revenue.byPlan.pro?.mrrUSD || 0).toFixed(2)} / 月`}
             />
             <Stat
-              label="Ultra ($49.9)"
+              label="旗舰版 Ultra（$49.9）"
               value={data.revenue.byPlan.ultra?.count || 0}
-              sub={`$${(data.revenue.byPlan.ultra?.mrrUSD || 0).toFixed(2)}/mo`}
+              sub={`$${(data.revenue.byPlan.ultra?.mrrUSD || 0).toFixed(2)} / 月`}
             />
           </div>
         </Section>
 
         {/* Projects */}
-        <Section title="Projects">
+        <Section title="项目">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <Stat label="Total decks" value={data.projects.total} />
-            <Stat label="Today" value={data.projects.today} />
-            <Stat label="Last 7 days" value={data.projects.last7days} />
+            <Stat label="累计项目数" value={data.projects.total} />
+            <Stat label="今日新增" value={data.projects.today} />
+            <Stat label="近 7 天新增" value={data.projects.last7days} />
           </div>
         </Section>
 
         {/* Credits & cost */}
-        <Section title="Credits & API cost">
+        <Section title="积分与 API 成本">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <Stat
-              label="Credits consumed"
+              label="累计积分消耗"
               value={data.credits.totalConsumed.toLocaleString()}
-              sub={`${data.credits.todayConsumed.toLocaleString()} today`}
+              sub={`今日消耗 ${data.credits.todayConsumed.toLocaleString()}`}
             />
             <Stat
-              label="Est. API cost"
+              label="API 成本估算"
               value={`$${data.credits.estimatedAPICostUSD.toFixed(2)}`}
-              sub="@ $0.001/credit"
+              sub="按 $0.001 / 积分计算"
             />
             <Stat
-              label="Est. gross margin"
+              label="毛利率估算"
               value={
                 data.revenue.mrrUSD > 0
                   ? `${(
@@ -255,18 +258,18 @@ export default function AdminMetricsPage() {
                     ).toFixed(1)}%`
                   : "—"
               }
-              sub="(MRR - API cost) / MRR"
+              sub="（MRR − API 成本）/ MRR"
             />
           </div>
         </Section>
 
         {/* Trend */}
-        <Section title="30-day trend">
+        <Section title="近 30 天趋势">
           <TrendChart data={data.trend} />
         </Section>
 
         <footer className="mt-12 pt-6 border-t border-zinc-200 text-[11px] font-mono text-zinc-400">
-          Page view stats (PV / UV) live in{" "}
+          页面访问量（PV / UV）请前往{" "}
           <a
             href="https://vercel.com/taotang851-3495s-projects/guizang-ppt/analytics"
             target="_blank"
@@ -275,7 +278,7 @@ export default function AdminMetricsPage() {
           >
             Vercel Analytics
           </a>{" "}
-          (separate dashboard).
+          查看（独立看板）
         </footer>
       </div>
     </div>
