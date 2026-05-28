@@ -20,10 +20,14 @@ export const PRODUCT_ID_BY_PLAN: Record<PlanId, string> = {
 };
 
 // 每月积分配额，跟 i18n 里的 *Feature1 文案保持一致
+// worst-case 40% 利润率反推（详见商业化方案核算）：
+// - 1 积分 ≈ $0.001 成本预算
+// - 生成 PPT 扣 25 积分（含 $0.010 图片成本）
+// - 编辑扣 18 积分
 export const CREDITS_BY_PLAN: Record<PlanId, number> = {
-  starter: 500,
-  pro: 1500,
-  ultra: 5000,
+  starter: 4500,
+  pro: 10000,
+  ultra: 25000,
 };
 
 // ── Checkout ─────────────────────────────────────────────
