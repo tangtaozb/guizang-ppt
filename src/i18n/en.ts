@@ -297,7 +297,7 @@ export const en: Dict = {
     faqPaymentA: "Billed via Creem.io (Merchant of Record). Refund terms on the Refund page.",
   },
   footer: {
-    tagline: "Turn words into a beautifully set deck. Magazine × Swiss × Conversation.",
+    tagline: "Turn words into premium magazine-style decks. Magazine × Swiss × Conversation.",
     colProduct: "Product",
     colLegal: "Legal",
     colLang: "Language",

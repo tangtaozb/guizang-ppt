@@ -297,7 +297,7 @@ export const zh = {
     faqPaymentA: "结算通过 Creem.io（Merchant of Record）。退款条款详见 Refund 页面。",
   },
   footer: {
-    tagline: "把文字变成精致的演示文稿。杂志感 × 瑞士设计 × 对话式编辑。",
+    tagline: "把文字变成高级杂志风格 PPT。杂志感 × 瑞士设计 × 对话式编辑。",
     colProduct: "产品",
     colLegal: "法律",
     colLang: "语言",
