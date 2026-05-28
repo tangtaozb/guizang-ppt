@@ -363,7 +363,8 @@ export default function EditorPage() {
                 await saveVersion(pid, fullHtml, t("editor.versionInitial"));
                 navigateToProject(pid);
                 dbConsumeCredits({
-                  amount: 10,
+                  // 25 credits ≈ $0.025 (AI $0.015 + image search $0.010)
+                  amount: 25,
                   description: t("userCenter.generate"),
                   projectTitle: projectTitle || t("common.untitled"),
                   type: "generate",
@@ -374,7 +375,8 @@ export default function EditorPage() {
                 if (projectId) {
                   await saveVersion(projectId, fullHtml, t("editor.versionEdit", { text: userMsg.slice(0, 30) }));
                   dbConsumeCredits({
-                    amount: 5,
+                    // 18 credits ≈ $0.018 (full HTML round-trip)
+                    amount: 18,
                     description: `${t("userCenter.edit")}: ${userMsg.slice(0, 20)}`,
                     projectTitle: projectTitle || t("common.untitled"),
                     type: "edit",

@@ -26,7 +26,7 @@ const plans: PlanDef[] = [
     id: "starter",
     nameKey: "pricing.starter",
     priceUSD: 9.9,
-    monthlyCredits: 500,
+    monthlyCredits: 4500,
     featureKeys: [
       "pricing.starterFeature1",
       "pricing.starterFeature2",
@@ -39,7 +39,7 @@ const plans: PlanDef[] = [
     id: "pro",
     nameKey: "pricing.pro",
     priceUSD: 19.9,
-    monthlyCredits: 1500,
+    monthlyCredits: 10000,
     popular: true,
     featureKeys: [
       "pricing.proFeature1",
@@ -54,7 +54,7 @@ const plans: PlanDef[] = [
     id: "ultra",
     nameKey: "pricing.ultra",
     priceUSD: 49.9,
-    monthlyCredits: 5000,
+    monthlyCredits: 25000,
     featureKeys: [
       "pricing.ultraFeature1",
       "pricing.ultraFeature2",

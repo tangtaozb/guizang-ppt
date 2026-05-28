@@ -99,22 +99,15 @@ export function saveMessages(projectId: string, messages: ChatMessage[]) {
 
 // ── User Profile ──
 
+// Legacy localStorage fallback (real users are managed in Supabase).
+// New users start with 0 credits — must subscribe to use the product.
 const DEFAULT_USER: UserProfile = {
   id: "local-user",
   phone: "138****0000",
   nickname: "用户",
   plan: "free",
-  credits: 100,
-  creditHistory: [
-    {
-      id: "init",
-      type: "purchase",
-      amount: 100,
-      description: "新用户赠送积分",
-      projectTitle: "",
-      createdAt: new Date().toISOString(),
-    },
-  ],
+  credits: 0,
+  creditHistory: [],
   createdAt: new Date().toISOString(),
 };
 
