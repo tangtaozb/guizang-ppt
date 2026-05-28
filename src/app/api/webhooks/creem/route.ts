@@ -74,12 +74,23 @@ export async function POST(req: NextRequest) {
 
   try {
     const handled = await handleEvent(eventType, obj);
-    await supabase.from("creem_webhook_events").insert({
-      event_id: eventId,
-      event_type: eventType,
-      payload: event as unknown as Record<string, unknown>,
-    });
-    return NextResponse.json({ ok: true, handled });
+    // 只有真正执行了业务逻辑才记录到去重表，skipped/unhandled 不记录
+    // 这样修了 bug 后重发能再次尝试处理
+    const wasHandled = handled.startsWith("upgraded ") ||
+                       handled.startsWith("refunded ") ||
+                       handled.includes(" canceled ") ||
+                       handled.includes(" expired ") ||
+                       handled.includes(" past_due ") ||
+                       handled.includes(" paused ") ||
+                       handled.includes(" scheduled_cancel ");
+    if (wasHandled) {
+      await supabase.from("creem_webhook_events").insert({
+        event_id: eventId,
+        event_type: eventType,
+        payload: event as unknown as Record<string, unknown>,
+      });
+    }
+    return NextResponse.json({ ok: true, handled, recorded: wasHandled });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[creem webhook] handler failed for ${eventType}:`, msg);
