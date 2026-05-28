@@ -1,5 +1,6 @@
 // POST /api/webhooks/creem — 接收 Creem webhook 事件
-// Events: checkout.completed / subscription.active|paid|canceled|past_due|expired / refund.created
+// 事件类型：subscription.{active,paid,canceled,past_due,expired,update,trialing,paused}
+//          checkout.completed / refund.created / dispute.created
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import {
@@ -11,25 +12,34 @@ import {
 
 interface CreemEvent {
   id?: string;
-  event_id?: string;
-  type?: string;
-  event_type?: string;
-  data?: CreemEventData;
-  object?: CreemEventData;
+  eventType?: string;       // camelCase（Creem 实际用的）
+  event_type?: string;      // snake_case fallback
+  type?: string;            // 通用 fallback
+  object?: CreemObject;     // 业务对象（subscription / checkout / refund）
+  data?: CreemObject;       // fallback
+  created_at?: number | string;
 }
 
-interface CreemEventData {
+interface CreemObject {
   id?: string;
-  customer?: { id?: string; email?: string };
-  product?: { id?: string };
-  subscription?: { id?: string; status?: string; current_period_end?: string | number };
-  metadata?: { user_id?: string; userId?: string };
-  current_period_end?: string | number;
+  object?: string;                    // 类型标识："subscription" / "checkout" / "refund"
   status?: string;
+  product?: { id?: string };
+  customer?: {
+    id?: string;
+    email?: string;
+    metadata?: Record<string, string>;
+  };
+  metadata?: Record<string, string>;
+  // 订阅周期（Creem 用 _date 后缀）
+  current_period_start_date?: string;
+  current_period_end_date?: string;
+  current_period_end?: string | number;  // fallback
+  // checkout 里可能嵌套
+  subscription?: { id?: string };
 }
 
 export async function POST(req: NextRequest) {
-  // 必须用 raw text 做签名验证（json() 会改变字节序）
   const rawBody = await req.text();
   const sig = req.headers.get("creem-signature");
 
@@ -45,88 +55,108 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const eventId = event.id || event.event_id || `${Date.now()}-${Math.random()}`;
-  const eventType = event.type || event.event_type || "unknown";
-  const data = event.data || event.object || {};
+  const eventId = event.id || `${Date.now()}-${Math.random()}`;
+  const eventType = event.eventType || event.event_type || event.type || "unknown";
+  const obj = event.object || event.data || {};
 
-  // 幂等去重 —— Creem 失败会重试 4 次，避免积分重复发放
+  console.log(`[creem webhook] received ${eventType} (event_id=${eventId})`);
+
+  // 幂等去重
   const { data: existing } = await supabase
     .from("creem_webhook_events")
     .select("event_id")
     .eq("event_id", eventId)
     .maybeSingle();
   if (existing) {
+    console.log(`[creem webhook] deduped ${eventId}`);
     return NextResponse.json({ ok: true, deduped: true });
   }
 
   try {
-    await handleEvent(eventType, data);
+    const handled = await handleEvent(eventType, obj);
     await supabase.from("creem_webhook_events").insert({
       event_id: eventId,
       event_type: eventType,
       payload: event as unknown as Record<string, unknown>,
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, handled });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[creem webhook] handler failed for ${eventType}:`, msg);
-    // 返回 500 让 Creem 重试
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
 // ───────────────────────────────────────────
 
-async function handleEvent(eventType: string, data: CreemEventData) {
-  const userId = data.metadata?.user_id || data.metadata?.userId;
+async function handleEvent(eventType: string, obj: CreemObject): Promise<string> {
+  // 找 user_id：先看 subscription.metadata，再看 customer.metadata
+  const userId =
+    obj.metadata?.user_id ||
+    obj.metadata?.userId ||
+    obj.customer?.metadata?.user_id ||
+    obj.customer?.metadata?.userId;
+
   if (!userId) {
-    console.warn(`[creem webhook] no user_id in metadata for ${eventType}`);
-    return;
+    console.warn(`[creem webhook] no user_id for ${eventType}`, {
+      objectId: obj.id,
+      objectType: obj.object,
+      hasMetadata: !!obj.metadata,
+      hasCustomerMetadata: !!obj.customer?.metadata,
+    });
+    return "skipped: no user_id";
   }
 
   switch (eventType) {
     case "checkout.completed":
     case "subscription.active":
-    case "subscription.paid": {
-      // 1) 拿到产品 → 套餐
-      const productId = data.product?.id;
+    case "subscription.paid":
+    case "subscription.update":
+    case "subscription.trialing": {
+      const productId = obj.product?.id;
       const plan = productId ? PLAN_BY_PRODUCT_ID[productId] : undefined;
       if (!plan) {
         console.warn(`[creem webhook] unknown product_id ${productId} for ${eventType}`);
-        return;
+        return `skipped: unknown product ${productId}`;
       }
 
-      const subId = data.subscription?.id || data.id;
-      const customerId = data.customer?.id;
+      const subId = obj.id || obj.subscription?.id;
+      const customerId = obj.customer?.id;
       const periodEnd =
-        data.subscription?.current_period_end || data.current_period_end || null;
+        obj.current_period_end_date ||
+        (typeof obj.current_period_end === "number"
+          ? new Date(obj.current_period_end).toISOString()
+          : obj.current_period_end) ||
+        null;
 
-      // 2) 升级套餐 + 重置当月积分（覆盖式：每月重新发，未用完作废）
       await upgradePlan(userId, plan, {
         subscriptionId: subId,
         customerId,
         periodEnd: periodEnd ? new Date(periodEnd).toISOString() : null,
       });
-      return;
+      console.log(`[creem webhook] ${eventType}: user=${userId} upgraded to ${plan}`);
+      return `upgraded ${userId} to ${plan}`;
     }
 
     case "subscription.canceled":
+    case "subscription.scheduled_cancel":
     case "subscription.expired":
-    case "subscription.past_due": {
-      // 订阅结束/失效 → 退回 free 套餐（保留剩余积分到周期末，已通过 current_period_end 标记）
-      await downgradeToFree(userId, data.subscription?.id);
-      return;
+    case "subscription.past_due":
+    case "subscription.paused": {
+      await downgradeToFree(userId, obj.id);
+      console.log(`[creem webhook] ${eventType}: user=${userId} marked ${eventType}`);
+      return `${eventType} ${userId}`;
     }
 
     case "refund.created": {
-      // 退款 → 重置 free + 清零积分 + 记录
-      const subId = data.subscription?.id;
-      await refundReset(userId, subId);
-      return;
+      await refundReset(userId, obj.id || obj.subscription?.id);
+      console.log(`[creem webhook] refund: user=${userId}`);
+      return `refunded ${userId}`;
     }
 
     default:
       console.log(`[creem webhook] unhandled event type: ${eventType}`);
+      return `unhandled ${eventType}`;
   }
 }
 
@@ -153,7 +183,7 @@ async function upgradePlan(
     .from("profiles")
     .update({
       plan,
-      credits, // 覆盖式刷新本周期积分
+      credits,
       creem_subscription_id: meta.subscriptionId,
       creem_customer_id: meta.customerId,
       subscription_status: "active",
@@ -167,14 +197,13 @@ async function upgradePlan(
     amount: credits,
     description:
       profile.plan === plan
-        ? `${plan.toUpperCase()} 月度续费，积分已重置`
+        ? `${plan.toUpperCase()} 月度续费，积分已重置为 ${credits}`
         : `订阅 ${plan.toUpperCase()} 成功，获得 ${credits} 积分`,
     project_title: "",
   });
 }
 
 async function downgradeToFree(userId: string, subscriptionId?: string) {
-  // 取消后保留当前积分，等下一个 cycle 自然过期
   await supabase
     .from("profiles")
     .update({
@@ -182,9 +211,6 @@ async function downgradeToFree(userId: string, subscriptionId?: string) {
       creem_subscription_id: subscriptionId || null,
     })
     .eq("id", userId);
-
-  // 真正切回 free + 清零积分要等到 current_period_end 之后
-  // 这里只更新状态，前端根据 current_period_end 判断是否仍能用
 }
 
 async function refundReset(userId: string, subscriptionId?: string) {
