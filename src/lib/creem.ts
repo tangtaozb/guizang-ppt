@@ -75,6 +75,35 @@ export async function createCheckout(params: CreateCheckoutParams): Promise<Cree
   return res.json();
 }
 
+// ── Subscription upgrade（按比例抵扣）────────────────────
+
+export interface UpgradeSubscriptionParams {
+  subscriptionId: string;
+  newProductId: string;
+}
+
+export async function upgradeSubscription(params: UpgradeSubscriptionParams) {
+  if (!CREEM_API_KEY) throw new Error("CREEM_API_KEY is not configured");
+
+  const res = await fetch(`${CREEM_API_URL}/subscriptions/${params.subscriptionId}/upgrade`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": CREEM_API_KEY,
+    },
+    body: JSON.stringify({
+      product_id: params.newProductId,
+      update_behavior: "proration-charge-immediately",
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Creem upgrade failed: ${res.status} ${errText}`);
+  }
+  return res.json();
+}
+
 // ── Webhook signature verification ──────────────────────
 
 export function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {

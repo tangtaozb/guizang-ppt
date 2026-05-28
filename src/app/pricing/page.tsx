@@ -1,25 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslation } from "@/i18n";
+import { dbGetUser, type DbUserProfile } from "@/lib/db";
+
+type PlanId = "starter" | "pro" | "ultra";
 
 interface PlanDef {
-  id: "starter" | "pro" | "ultra";
+  id: PlanId;
   nameKey: string;
-  price: string;
+  priceUSD: number;        // 数字版用于计算抵扣
+  monthlyCredits: number;  // 月度积分配额（用于估算剩余比例）
   popular?: boolean;
   featureKeys: string[];
 }
+
+const PLAN_ORDER: Record<string, number> = { free: 0, starter: 1, pro: 2, ultra: 3 };
 
 const plans: PlanDef[] = [
   {
     id: "starter",
     nameKey: "pricing.starter",
-    price: "$9.9",
+    priceUSD: 9.9,
+    monthlyCredits: 500,
     featureKeys: [
       "pricing.starterFeature1",
       "pricing.starterFeature2",
@@ -31,7 +38,8 @@ const plans: PlanDef[] = [
   {
     id: "pro",
     nameKey: "pricing.pro",
-    price: "$19.9",
+    priceUSD: 19.9,
+    monthlyCredits: 1500,
     popular: true,
     featureKeys: [
       "pricing.proFeature1",
@@ -45,7 +53,8 @@ const plans: PlanDef[] = [
   {
     id: "ultra",
     nameKey: "pricing.ultra",
-    price: "$49.9",
+    priceUSD: 49.9,
+    monthlyCredits: 5000,
     featureKeys: [
       "pricing.ultraFeature1",
       "pricing.ultraFeature2",
@@ -58,13 +67,39 @@ const plans: PlanDef[] = [
   },
 ];
 
+// 按当前 plan 剩余积分比例估算可抵扣金额
+function estimateDiscount(user: DbUserProfile | null): number {
+  if (!user || user.plan === "free") return 0;
+  const currentPlan = plans.find((p) => p.id === user.plan);
+  if (!currentPlan) return 0;
+  const ratio = Math.min(1, Math.max(0, user.credits / currentPlan.monthlyCredits));
+  return currentPlan.priceUSD * ratio;
+}
+
+type CardAction = "subscribe" | "current" | "upgrade" | "downgrade";
+
+function cardActionFor(planId: PlanId, userPlan: string): CardAction {
+  if (!userPlan || userPlan === "free") return "subscribe";
+  if (userPlan === planId) return "current";
+  return PLAN_ORDER[planId] > PLAN_ORDER[userPlan] ? "upgrade" : "downgrade";
+}
+
 export default function PricingPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const [user, setUser] = useState<DbUserProfile | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  async function handleSubscribe(planId: string) {
+  useEffect(() => {
+    dbGetUser()
+      .then(setUser)
+      .catch(() => setUser(null)); // 未登录 fallback 为 free
+  }, []);
+
+  const discount = estimateDiscount(user);
+
+  async function handleSubscribe(planId: PlanId) {
     setErrMsg(null);
     setLoadingPlan(planId);
     try {
@@ -74,15 +109,44 @@ export default function PricingPage() {
         body: JSON.stringify({ plan: planId }),
       });
       if (res.status === 401) {
-        // 未登录，跳到登录页并带回跳
         router.push(`/login?next=/pricing`);
         return;
       }
       const json = await res.json();
-      if (!res.ok || !json.url) {
-        throw new Error(json.error || "创建 Checkout 失败");
-      }
+      if (!res.ok || !json.url) throw new Error(json.error || "创建 Checkout 失败");
       window.location.href = json.url;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrMsg(msg);
+      setLoadingPlan(null);
+    }
+  }
+
+  async function handleUpgrade(planId: PlanId) {
+    const planName = t(plans.find((p) => p.id === planId)?.nameKey || "");
+    if (
+      !window.confirm(
+        t("pricing.upgradeConfirmTitle").replace("{plan}", planName) +
+          "\n\n" +
+          t("pricing.upgradeConfirmBody")
+      )
+    ) {
+      return;
+    }
+    setErrMsg(null);
+    setLoadingPlan(planId);
+    try {
+      const res = await fetch("/api/subscription/upgrade", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "升级失败");
+      // 升级成功，刷新用户数据
+      const updated = await dbGetUser();
+      setUser(updated);
+      setLoadingPlan(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrMsg(msg);
@@ -117,55 +181,86 @@ export default function PricingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative bg-white rounded-xl border p-8 flex flex-col ${
-                  plan.popular
-                    ? "border-accent shadow-lg shadow-accent/10 scale-[1.02]"
-                    : "border-border"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent text-accent-foreground text-xs font-medium rounded-full">
-                    {t("pricing.popular")}
-                  </div>
-                )}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-2">{t(plan.nameKey)}</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">{t("pricing.perMonth")}</span>
-                  </div>
-                </div>
-                <ul className="flex-1 space-y-3 mb-8">
-                  {plan.featureKeys.map((fk) => (
-                    <li key={fk} className="flex items-start gap-2 text-sm">
-                      <svg className="w-4 h-4 mt-0.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      {t(fk)}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  type="button"
-                  onClick={() => handleSubscribe(plan.id)}
-                  disabled={loadingPlan !== null}
-                  className={`w-full py-2.5 rounded-lg text-sm font-medium text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+            {plans.map((plan) => {
+              const action = cardActionFor(plan.id, user?.plan || "free");
+              const isUpgrade = action === "upgrade";
+              const effectivePrice = isUpgrade ? Math.max(0, plan.priceUSD - discount) : plan.priceUSD;
+              const showDiscount = isUpgrade && discount > 0.01;
+
+              return (
+                <div
+                  key={plan.id}
+                  className={`relative bg-white rounded-xl border p-8 flex flex-col ${
                     plan.popular
-                      ? "bg-accent text-accent-foreground hover:opacity-90"
-                      : "border border-border hover:bg-muted"
+                      ? "border-accent shadow-lg shadow-accent/10 scale-[1.02]"
+                      : "border-border"
                   }`}
                 >
-                  {loadingPlan === plan.id ? "…" : t("pricing.subscribe")}
-                </button>
-              </div>
-            ))}
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent text-accent-foreground text-xs font-medium rounded-full">
+                      {t("pricing.popular")}
+                    </div>
+                  )}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-2">{t(plan.nameKey)}</h3>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold">
+                        ${effectivePrice.toFixed(effectivePrice % 1 === 0 ? 0 : 2)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">{t("pricing.perMonth")}</span>
+                    </div>
+                    {showDiscount && (
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        <span className="line-through">${plan.priceUSD}</span>
+                        <span className="text-accent ml-2">
+                          {t("pricing.discountOff")} ${discount.toFixed(2)}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                  <ul className="flex-1 space-y-3 mb-8">
+                    {plan.featureKeys.map((fk) => (
+                      <li key={fk} className="flex items-start gap-2 text-sm">
+                        <svg className="w-4 h-4 mt-0.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {t(fk)}
+                      </li>
+                    ))}
+                  </ul>
+                  <PlanButton
+                    action={action}
+                    isPopular={!!plan.popular}
+                    label={
+                      loadingPlan === plan.id
+                        ? t("pricing.upgrading")
+                        : action === "current"
+                        ? t("pricing.subscribed")
+                        : action === "upgrade"
+                        ? t("pricing.upgrade")
+                        : action === "downgrade"
+                        ? t("pricing.downgrade")
+                        : t("pricing.subscribe")
+                    }
+                    disabled={loadingPlan !== null || action === "current" || action === "downgrade"}
+                    onClick={() => {
+                      if (action === "upgrade") handleUpgrade(plan.id);
+                      else if (action === "subscribe") handleSubscribe(plan.id);
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           {errMsg && (
             <p className="mt-6 text-center text-sm text-red-500">{errMsg}</p>
+          )}
+
+          {discount > 0.01 && (
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              {t("pricing.discountNote")}
+            </p>
           )}
 
           <p className="mt-10 text-center text-xs text-muted-foreground max-w-2xl mx-auto">
@@ -184,5 +279,36 @@ export default function PricingPage() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+function PlanButton({
+  action,
+  isPopular,
+  label,
+  disabled,
+  onClick,
+}: {
+  action: CardAction;
+  isPopular: boolean;
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const base = "w-full py-2.5 rounded-lg text-sm font-medium text-center transition-all disabled:cursor-not-allowed";
+  let style: string;
+  if (action === "current") {
+    style = "border border-accent text-accent bg-accent/5 disabled:opacity-100";
+  } else if (action === "downgrade") {
+    style = "border border-border text-muted-foreground disabled:opacity-60";
+  } else if (isPopular) {
+    style = "bg-accent text-accent-foreground hover:opacity-90 disabled:opacity-50";
+  } else {
+    style = "border border-border hover:bg-muted disabled:opacity-50";
+  }
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} className={`${base} ${style}`}>
+      {label}
+    </button>
   );
 }
