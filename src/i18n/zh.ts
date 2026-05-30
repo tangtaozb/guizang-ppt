@@ -347,6 +347,24 @@ export const zh = {
     madeWith: "· Made with attention ·",
     billedVia: "Billed via Creem.io",
   },
+  blog: {
+    kicker: "ARTIFYSLIDE · 专栏",
+    titleA: "值得一看的",
+    titleB: "演示文稿手记。",
+    lede: "关于 AI 演示、编辑级排版,以及大多数工具不愿做的设计取舍。",
+    empty: "这门语言暂无文章。",
+    backToList: "← 专栏",
+    readingTime: "{min} 分钟阅读",
+    endKicker: "— 全文完",
+    endTitle: "如果这些说到了你心里,最简单的下一步就是亲手试一下。",
+    ctaOpen: "打开 ArtifySlide →",
+    ctaPricing: "查看定价",
+    ctaMore: "更多文章",
+    badgeEn: "英文",
+    badgeZh: "中文",
+    altToZh: "阅读中文版 →",
+    altToEn: "Read in English →",
+  },
 };
 
 export type Dict = typeof zh;

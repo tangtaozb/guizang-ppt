@@ -1,14 +1,20 @@
-// 单篇文章页 —— 阅读体验优先
-import Link from "next/link";
+// 单篇文章页 —— server 渲染 MDX 正文（文章自身语言），chrome 由客户端组件按站点语言切换
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { SiteNav } from "@/components/layout/site-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { getPost, getAllSlugs, formatDate } from "@/lib/blog";
+import { getPost, getAllSlugs } from "@/lib/blog";
+import type { Lang } from "@/lib/blog-format";
 import { mdxComponents } from "@/components/blog/mdx-components";
 import { BlogCTA } from "@/components/blog/blog-cta";
+import {
+  BlogBackLink,
+  BlogDateline,
+  BlogAltLink,
+  BlogEndCTA,
+} from "@/components/blog/blog-article-chrome";
 import {
   JsonLd,
   organizationSchema,
@@ -33,19 +39,32 @@ export async function generateMetadata({
   const post = await getPost(slug);
   if (!post) return { title: "Not found" };
   const url = `${SITE_URL}/blog/${slug}`;
+
+  // hreflang：有译文时互相指向
+  let languages: Record<string, string> | undefined;
+  if (post.altSlug) {
+    const selfCode = post.lang === "zh" ? "zh-CN" : "en";
+    const altCode = post.lang === "zh" ? "en" : "zh-CN";
+    languages = {
+      [selfCode]: `/blog/${slug}`,
+      [altCode]: `/blog/${post.altSlug}`,
+    };
+  }
+
   return {
     title: post.title,
     description: post.description,
     keywords: post.keywords,
-    alternates: { canonical: `/blog/${slug}` },
+    alternates: { canonical: `/blog/${slug}`, languages },
     openGraph: {
       title: post.title,
       description: post.description,
       url,
       type: "article",
+      locale: post.lang === "zh" ? "zh_CN" : "en_US",
       publishedTime: post.date,
-      authors: [post.author ?? "ArtifySlide"],
-      images: post.ogImage ? [post.ogImage] : undefined, // 否则继承根 metadata 的 /og.png
+      authors: [post.author],
+      images: post.ogImage ? [post.ogImage] : undefined,
     },
     twitter: {
       card: "summary_large_image",
@@ -65,6 +84,8 @@ export default async function BlogPostPage({
   const post = await getPost(slug);
   if (!post) notFound();
 
+  const otherLang: Lang = post.lang === "en" ? "zh" : "en";
+
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -72,6 +93,7 @@ export default async function BlogPostPage({
     description: post.description,
     datePublished: post.date,
     dateModified: post.date,
+    inLanguage: post.lang === "zh" ? "zh-CN" : "en",
     author: { "@type": "Organization", name: post.author },
     publisher: {
       "@type": "Organization",
@@ -80,7 +102,7 @@ export default async function BlogPostPage({
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/blog/${slug}` },
     image: post.ogImage ?? `${SITE_URL}/og.png`,
-    keywords: post.keywords?.join(", "),
+    keywords: post.keywords.join(", "),
   };
 
   return (
@@ -89,18 +111,19 @@ export default async function BlogPostPage({
       <SiteNav />
 
       <article className="mx-auto max-w-[720px] px-6 sm:px-10 pt-12 sm:pt-20 pb-24">
-        {/* Breadcrumb */}
-        <div className="font-mono text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">
-          <Link href="/blog" className="hover:text-accent transition-colors">
-            ← Journal
-          </Link>
+        {/* Breadcrumb + 译文互链 */}
+        <div className="flex items-center justify-between gap-4 font-mono text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">
+          <BlogBackLink />
+          {post.altSlug && (
+            <BlogAltLink altSlug={post.altSlug} targetLang={otherLang} />
+          )}
         </div>
 
         {/* Article header */}
         <header className="mt-10 sm:mt-14">
           <div className="flex items-center gap-2.5 font-mono text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            {formatDate(post.date)} · {post.readingTimeText}
+            <BlogDateline date={post.date} minutes={post.readingMinutes} />
           </div>
           <h1 className="mt-6 text-[36px] sm:text-[52px] font-medium leading-[1.05] tracking-[-0.035em]">
             {post.title}
@@ -113,48 +136,17 @@ export default async function BlogPostPage({
           <div className="mt-8 border-b border-border" />
         </header>
 
-        {/* MDX body */}
+        {/* MDX body —— 服务端渲染，文章自身语言 */}
         <div className="mdx-body">
           <MDXRemote
             source={post.content}
             components={{ ...mdxComponents, BlogCTA }}
-            options={{
-              mdxOptions: {
-                remarkPlugins: [remarkGfm],
-              },
-            }}
+            options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
           />
         </div>
 
-        {/* End-of-article CTA */}
-        <div className="mt-20 border-t border-border pt-10">
-          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-            — End of article
-          </div>
-          <div className="mt-4 text-[22px] sm:text-[26px] font-medium leading-[1.3] tracking-[-0.01em] max-w-[560px]">
-            If this resonated, the simplest next step is to try it.
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/"
-              className="inline-flex h-11 items-center rounded-md bg-foreground px-5 text-[14.5px] font-medium text-white hover:opacity-90 transition-opacity"
-            >
-              Open ArtifySlide →
-            </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex h-11 items-center rounded-md border border-border px-4.5 text-[14.5px] font-medium hover:bg-muted transition-colors"
-            >
-              See pricing
-            </Link>
-            <Link
-              href="/blog"
-              className="inline-flex h-11 items-center rounded-md border border-border px-4.5 text-[14.5px] font-medium hover:bg-muted transition-colors"
-            >
-              More posts
-            </Link>
-          </div>
-        </div>
+        {/* 文末 CTA（i18n） */}
+        <BlogEndCTA />
       </article>
 
       <SiteFooter />

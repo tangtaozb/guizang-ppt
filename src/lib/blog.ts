@@ -1,10 +1,13 @@
-// 博客文章读取层 —— 文件系统优先（src/content/blog/*.mdx）。
-// MDX 通过 next-mdx-remote 在 RSC 中渲染，不产生客户端 JS 包体。
+// 博客文章读取层 —— 文件系统（src/content/blog/*.mdx），Node runtime only。
+// 每个 .mdx = 一篇文章（单一语言），frontmatter 带 lang + 可选 altSlug 关联译文。
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import readingTime from "reading-time";
+import type { Lang, BlogPostMeta } from "./blog-format";
+
+export type { Lang, BlogPostMeta } from "./blog-format";
 
 export type BlogFrontmatter = {
   title: string;
@@ -13,14 +16,9 @@ export type BlogFrontmatter = {
   author?: string;
   keywords?: string[];
   ogImage?: string;
-  /** 用于列表卡片的短摘要，未提供则取 description */
   dek?: string;
-};
-
-export type BlogPostMeta = BlogFrontmatter & {
-  slug: string;
-  readingTimeText: string;
-  wordCount: number;
+  lang?: Lang; // 默认 "en"
+  altSlug?: string;
 };
 
 export type BlogPost = BlogPostMeta & {
@@ -56,7 +54,9 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
       keywords: fm.keywords ?? [],
       ogImage: fm.ogImage,
       dek: fm.dek,
-      readingTimeText: rt.text,
+      lang: fm.lang ?? "en",
+      altSlug: fm.altSlug,
+      readingMinutes: Math.max(1, Math.ceil(rt.minutes)),
       wordCount: rt.words,
       content: parsed.content,
     };
@@ -77,13 +77,4 @@ export async function getAllPosts(): Promise<BlogPostMeta[]> {
 
 export async function getAllSlugs(): Promise<string[]> {
   return readAllSlugs();
-}
-
-/** 格式化日期：May 30, 2026 */
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }
