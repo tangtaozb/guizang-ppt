@@ -10,11 +10,15 @@ const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
 const UMAMI_SCRIPT =
   process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || "https://cloud.umami.is/script.js";
 
-// Google Analytics 4 — 默认硬编码 artifyslide.com 的 Measurement ID，
-// 可通过 NEXT_PUBLIC_GA_ID 覆盖（例如预览环境想用独立属性时）。
-// 设为空字符串则关闭 GA。
-const GA_MEASUREMENT_ID =
-  process.env.NEXT_PUBLIC_GA_ID ?? "G-ZZR9ERLEPM";
+// Vercel 自动注入 VERCEL_ENV（production / preview / development）。
+// 仅生产部署算 prod；缺省（本地/预览）一律按非生产处理 ——
+// 保证「漏配环境变量 = 不被搜索引擎索引、不打点」的安全默认。
+const IS_PROD = process.env.VERCEL_ENV === "production";
+
+// Google Analytics 4 — 仅生产启用，避免预览/staging 流量污染正式 GA 属性。
+const GA_MEASUREMENT_ID = IS_PROD
+  ? (process.env.NEXT_PUBLIC_GA_ID ?? "G-ZZR9ERLEPM")
+  : "";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +36,8 @@ const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://www.artifyslide.com";
+// 站点绝对域名 —— 跟随环境（预览/staging 设各自的 NEXT_PUBLIC_SITE_URL），缺省回落生产域名。
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.artifyslide.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -93,11 +98,12 @@ export const metadata: Metadata = {
     images: ["/og.png"],
   },
   robots: {
-    index: true,
-    follow: true,
+    // 仅生产可被索引；预览/staging（IS_PROD=false）一律 noindex，避免重复内容。
+    index: IS_PROD,
+    follow: IS_PROD,
     googleBot: {
-      index: true,
-      follow: true,
+      index: IS_PROD,
+      follow: IS_PROD,
       "max-image-preview": "large",
       "max-snippet": -1,
     },
