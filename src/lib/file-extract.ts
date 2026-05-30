@@ -4,21 +4,74 @@
 // - pdf         → pdfjs-dist directly, with the worker pinned to the bundled
 //                 file and run on the main thread.
 //
-// Why PDF is special: officeparser delegates PDFs to pdfjs but never sets
-// GlobalWorkerOptions.workerSrc. On Vercel's serverless runtime pdfjs then tries
-// to spin up a real worker, which never initializes → getDocument() hangs →
-// FUNCTION_INVOCATION_TIMEOUT (504). We bypass that by loading pdfjs ourselves
-// and pointing workerSrc at the real pdf.worker.mjs (bundled via
-// outputFileTracingIncludes in next.config.ts), so pdfjs runs as a "fake worker"
-// on the main thread — no thread spawn, serverless-safe.
+// Why PDF is special — two serverless gotchas, both handled here:
+//  1. officeparser delegates PDFs to pdfjs but never sets
+//     GlobalWorkerOptions.workerSrc, so pdfjs tries to spawn a real worker that
+//     never initializes → getDocument() hangs → 504. We load pdfjs ourselves and
+//     pin workerSrc to the bundled pdf.worker.mjs (fake worker, main thread).
+//  2. pdfjs's pdf.mjs references browser globals (DOMMatrix, Path2D, ImageData,
+//     …) at MODULE-EVAL time. Vercel's Node runtime doesn't define them →
+//     "ReferenceError: DOMMatrix is not defined" the instant pdfjs is imported.
+//     We install minimal stubs BEFORE importing pdfjs. Text extraction never
+//     calls their methods, so no-op stubs suffice (verified on real PDFs).
 //
 // Node runtime only — depends on Node Buffer / zlib.
 
 import { parseOfficeAsync } from "officeparser";
-import { createRequire } from "module";
 import { tmpdir } from "os";
 
-const require = createRequire(import.meta.url);
+/**
+ * Install no-op stubs for the browser globals pdfjs references at module-eval
+ * time. Idempotent; only fills globals that are missing. Must run BEFORE the
+ * dynamic import of pdfjs. Text extraction doesn't invoke their methods.
+ */
+function ensurePdfGlobals(): void {
+  const g = globalThis as Record<string, unknown>;
+  if (typeof g.DOMMatrix === "undefined") {
+    g.DOMMatrix = class DOMMatrix {
+      a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+      constructor(init?: number[] | string) {
+        if (Array.isArray(init) && init.length >= 6) {
+          [this.a, this.b, this.c, this.d, this.e, this.f] = init;
+        }
+      }
+      multiply() { return this; }
+      translate() { return this; }
+      scale() { return this; }
+      inverse() { return this; }
+      transformPoint(p: unknown) { return p; }
+    };
+  }
+  if (typeof g.Path2D === "undefined") {
+    g.Path2D = class Path2D {
+      addPath() {} moveTo() {} lineTo() {} bezierCurveTo() {}
+      quadraticCurveTo() {} arc() {} closePath() {} rect() {}
+    };
+  }
+  if (typeof g.ImageData === "undefined") {
+    g.ImageData = class ImageData {
+      width: number; height: number; data: Uint8ClampedArray;
+      constructor(w: number, h: number) {
+        this.width = w; this.height = h;
+        this.data = new Uint8ClampedArray((w * h || 0) * 4);
+      }
+    };
+  }
+  if (typeof g.DOMRect === "undefined") {
+    g.DOMRect = class DOMRect {
+      x: number; y: number; width: number; height: number;
+      constructor(x = 0, y = 0, w = 0, h = 0) {
+        this.x = x; this.y = y; this.width = w; this.height = h;
+      }
+    };
+  }
+  if (typeof g.DOMPoint === "undefined") {
+    g.DOMPoint = class DOMPoint {
+      x: number; y: number;
+      constructor(x = 0, y = 0) { this.x = x; this.y = y; }
+    };
+  }
+}
 
 export type FileKind = "docx" | "pptx" | "pdf";
 export const ACCEPTED_EXTS: FileKind[] = ["docx", "pptx", "pdf"];
@@ -53,14 +106,12 @@ export function inferKind(fileName: string, mime: string | undefined): FileKind 
  * see the file header for why officeparser's built-in PDF handling hangs.
  */
 async function extractPdfText(buffer: Buffer): Promise<string> {
+  ensurePdfGlobals(); // MUST run before importing pdfjs (module-eval needs them)
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  // Pin workerSrc to the real worker file so pdfjs loads it as a fake worker on
-  // the main thread instead of spawning a real one (which hangs on serverless).
-  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-    pdfjs.GlobalWorkerOptions.workerSrc = require.resolve(
-      "pdfjs-dist/legacy/build/pdf.worker.mjs"
-    );
-  }
+  // Import the worker MODULE (not a file path) so the bundler resolves it as a
+  // dependency and ships it. require.resolve()'d physical paths break once Next
+  // relocates code into .next/chunks; importing the module sidesteps that.
+  await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
   const doc = await pdfjs.getDocument({
     data: new Uint8Array(buffer),
