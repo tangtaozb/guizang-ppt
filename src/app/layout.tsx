@@ -10,6 +10,12 @@ const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
 const UMAMI_SCRIPT =
   process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || "https://cloud.umami.is/script.js";
 
+// Google Analytics 4 — 默认硬编码 artifyslide.com 的 Measurement ID，
+// 可通过 NEXT_PUBLIC_GA_ID 覆盖（例如预览环境想用独立属性时）。
+// 设为空字符串则关闭 GA。
+const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_ID ?? "G-ZZR9ERLEPM";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -126,6 +132,22 @@ export default function RootLayout({
             data-website-id={UMAMI_WEBSITE_ID}
             src={UMAMI_SCRIPT}
           />
+        )}
+        {/* Google Analytics 4：gtag.js — next/script 自动注入 <head>，
+            afterInteractive 在水合后执行，不阻塞首屏。 */}
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_MEASUREMENT_ID}');`}
+            </Script>
+          </>
         )}
       </body>
     </html>
