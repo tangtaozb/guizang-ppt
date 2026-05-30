@@ -557,7 +557,7 @@ export default function EditorPage() {
           </button>
 
           <LanguageSwitcher compact />
-          <UserCenter />
+          <UserCenter compact />
         </div>
       </header>
 

@@ -32,6 +32,8 @@ export interface DbUserProfile {
   plan: "free" | "starter" | "pro" | "ultra";
   credits: number;
   createdAt: string;
+  usedThisMonth: number;
+  monthlyQuota: number;
 }
 
 export interface DbCreditsPage {

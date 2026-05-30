@@ -121,7 +121,9 @@ function CreditHistoryModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function UserCenter() {
+// `compact` (editor nav) renders the avatar only — keeps editor layout untouched.
+// Default (dashboard) renders the full right cluster: credits pill + upgrade CTA + avatar.
+export function UserCenter({ compact = false }: { compact?: boolean } = {}) {
   const router = useRouter();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -142,12 +144,11 @@ export function UserCenter() {
     dbGetUser().then(setProfile).catch(() => {});
   }, [open]);
 
-  // Calculate dropdown position when opening
   useEffect(() => {
     if (!open || !buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
     setDropdownPos({
-      top: rect.bottom + 8,
+      top: rect.bottom + 10,
       right: window.innerWidth - rect.right,
     });
   }, [open]);
@@ -178,13 +179,40 @@ export function UserCenter() {
   if (!profile) return null;
 
   const initial = profile.nickname.charAt(0).toUpperCase();
+  const isFree = profile.plan === "free";
+  const used = Math.max(0, profile.usedThisMonth || 0);
+  const quota = Math.max(1, profile.monthlyQuota || 30);
+  const usagePct = Math.min(100, Math.round((used / quota) * 100));
 
   return (
     <>
+      {/* Credits pill — full right cluster only */}
+      {!compact && (
+        <div className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-full border border-[#e7e3da] bg-white text-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+          <span className="font-mono font-medium">{profile.credits}</span>
+          <span className="text-[#736b5e]">{t("userCenter.creditsUnit") || "积分"}</span>
+        </div>
+      )}
+
+      {/* Upgrade CTA — non-members only, with soft shine animation */}
+      {!compact && isFree && (
+        <button
+          onClick={() => router.push("/pricing")}
+          className="ui-shine flex items-center gap-1.5 h-9 pl-3 pr-3.5 rounded-full bg-accent text-accent-foreground text-xs font-semibold ring-1 ring-accent/30 shadow-[0_2px_12px_-2px_rgba(167,47,36,0.55)] hover:shadow-[0_4px_18px_-2px_rgba(167,47,36,0.7)] transition-shadow"
+        >
+          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          {t("userCenter.upgradeCta")}
+        </button>
+      )}
+
+      {/* Avatar */}
       <button
         ref={buttonRef}
         onClick={() => setOpen(!open)}
-        className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+        className={`w-9 h-9 rounded-full bg-accent/10 ring-1 ring-accent/15 flex items-center justify-center text-xs font-semibold text-accent hover:bg-accent/15 transition-colors ${compact ? "w-8 h-8" : ""}`}
       >
         {initial}
       </button>
@@ -192,13 +220,13 @@ export function UserCenter() {
       {open && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed w-72 bg-white rounded-xl border border-border shadow-lg z-[9999] overflow-hidden"
+          className="fixed w-72 bg-white rounded-2xl border border-[#e7e3da] shadow-[0_18px_50px_-12px_rgba(20,15,8,0.28)] z-[9999] overflow-hidden"
           style={{ top: dropdownPos.top, right: dropdownPos.right }}
         >
           {/* Profile header */}
-          <div className="px-4 py-4 bg-gradient-to-br from-accent/5 to-accent/10">
+          <div className="px-4 py-4 border-b border-[#e7e3da]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-sm font-semibold text-accent">
+              <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center text-sm font-semibold text-accent">
                 {initial}
               </div>
               <div className="flex-1 min-w-0">
@@ -230,43 +258,75 @@ export function UserCenter() {
                 )}
                 <p className="text-xs text-muted-foreground mt-0.5 truncate">{profile.email || profile.phone}</p>
               </div>
-            </div>
-          </div>
-
-          {/* Plan & Credits */}
-          <div className="px-4 py-3 border-b border-border">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{t("userCenter.plan")}</span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+              <span className="text-[9px] font-mono tracking-[0.18em] uppercase text-muted-foreground px-2 py-0.5 rounded-full bg-[#efece4] whitespace-nowrap">
                 {t(planLabelKey(profile.plan))}
               </span>
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-xs text-muted-foreground">{t("userCenter.creditsLeft")}</span>
-              <span className="text-sm font-bold text-foreground">{profile.credits}</span>
+
+            {/* Credits & monthly usage */}
+            <div className="mt-3.5 flex items-end justify-between">
+              <div>
+                <div className="text-[9px] font-mono tracking-[0.18em] uppercase text-muted-foreground/80">
+                  {t("userCenter.creditsRemainingLabel")}
+                </div>
+                <div className="font-mono text-2xl font-semibold leading-none mt-1">{profile.credits}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] font-mono tracking-[0.18em] uppercase text-muted-foreground/80">
+                  {t("userCenter.creditsUsedThisMonthLabel")}
+                </div>
+                <div className="font-mono text-sm text-muted-foreground leading-none mt-1.5">{used}</div>
+              </div>
+            </div>
+            <div className="mt-2 h-1.5 rounded-full bg-[#efece4] overflow-hidden">
+              <div
+                className="h-full bg-accent/70 rounded-full transition-[width] duration-300"
+                style={{ width: `${usagePct}%` }}
+              />
             </div>
           </div>
 
+          {/* Upgrade banner — strong purchase nudge for free users */}
+          {isFree && (
+            <button
+              onClick={() => { router.push("/pricing"); setOpen(false); }}
+              className="group w-full text-left px-4 py-3.5 bg-gradient-to-br from-accent to-[#86241b] text-accent-foreground hover:from-[#b8362a] transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="ui-pulse-dot inline-block w-2 h-2 rounded-full bg-white" />
+                  <span className="text-[13px] font-semibold">{t("userCenter.upgradeBannerTitle")}</span>
+                </div>
+                <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </div>
+              <p className="text-[11px] text-white/75 mt-1">{t("userCenter.upgradeBannerDesc")}</p>
+            </button>
+          )}
+
           {/* Actions */}
-          <div className="py-1">
+          <div className="py-1.5">
             <button
               onClick={() => { setShowHistory(true); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors"
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-[#efece4] transition-colors"
             >
               <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {t("userCenter.history")}
             </button>
-            <button
-              onClick={() => router.push("/pricing")}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors"
-            >
-              <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
-              </svg>
-              {t("userCenter.upgrade")}
-            </button>
+            {!isFree && (
+              <button
+                onClick={() => router.push("/pricing")}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-[#efece4] transition-colors"
+              >
+                <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                </svg>
+                {t("userCenter.upgrade")}
+              </button>
+            )}
             <button
               onClick={async () => {
                 const supabase = createClient();
@@ -274,9 +334,9 @@ export function UserCenter() {
                 router.push("/login");
                 router.refresh();
               }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-muted transition-colors text-red-500"
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left text-accent hover:bg-accent/[0.06] transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
               </svg>
               {t("common.logout")}
