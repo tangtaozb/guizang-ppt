@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -14,4 +15,20 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// 仅当 SENTRY_AUTH_TOKEN 和 ORG/PROJECT 同时存在才上传 source map（local dev 不会触发）。
+const hasSentryUpload =
+  !!process.env.SENTRY_AUTH_TOKEN &&
+  !!process.env.SENTRY_ORG &&
+  !!process.env.SENTRY_PROJECT;
+
+export default hasSentryUpload
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG!,
+      project: process.env.SENTRY_PROJECT!,
+      authToken: process.env.SENTRY_AUTH_TOKEN!,
+      silent: true,
+      widenClientFileUpload: true,
+      disableLogger: true,
+      automaticVercelMonitors: false,
+    })
+  : nextConfig;
