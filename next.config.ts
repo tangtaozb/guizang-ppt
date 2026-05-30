@@ -2,11 +2,14 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  // officeparser dynamically imports pdfjs-dist/legacy at runtime. Mark them
-  // external so the whole package (incl. pdfjs + its .mjs assets) ships into
-  // the serverless function instead of being bundled/tree-shaken — the dynamic
-  // import() otherwise risks resolving to a missing chunk on Vercel.
-  serverExternalPackages: ["officeparser", "pdfjs-dist"],
+  // officeparser parses PDFs via pdfjs-dist/legacy. Next's static file tracing
+  // only catches the pdf.mjs entry, NOT the sibling pdf.worker.mjs it loads at
+  // runtime — so on Vercel the worker is missing and every PDF parse fails
+  // (docx/pptx don't need pdfjs, hence they worked). Force the whole pdfjs build
+  // dir into this route's serverless function.
+  outputFileTracingIncludes: {
+    "/api/upload/extract": ["./node_modules/pdfjs-dist/legacy/build/**"],
+  },
   async headers() {
     return [
       {
