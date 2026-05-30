@@ -58,6 +58,17 @@ export const metadata: Metadata = {
     title: "ArtifySlide — AI 高级杂志风格 PPT 生成器",
     description:
       "粘贴文字，AI 自动生成杂志风格 HTML 演示文稿。可对话编辑，9 套编辑级主题，单文件下载。",
+    images: [
+      {
+        // 静态 PNG（不走 Next.js ImageResponse 动态渲染），public/og.png。
+        // 静态文件命中 Vercel CDN 长缓存，Twitterbot 抓取 < 200ms，避免冷启动超时。
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: "ArtifySlide — Turn words into premium magazine-style decks",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -66,6 +77,7 @@ export const metadata: Metadata = {
     title: "ArtifySlide — AI 高级杂志风格 PPT 生成器",
     description:
       "粘贴文字，AI 自动生成杂志风格 HTML 演示文稿。可对话编辑，9 套编辑级主题，单文件下载。",
+    images: ["/og.png"],
   },
   robots: {
     index: true,
