@@ -214,6 +214,15 @@ export const zh = {
     privacy: "隐私政策",
     refund: "退款政策",
   },
+  upload: {
+    button: "上传文件",
+    hint: "支持 .docx / .pptx / .pdf（≤4MB）",
+    parsing: "正在解析 {name}…",
+    tooLarge: "文件过大，最大 4MB",
+    unsupported: "不支持的文件格式，仅支持 .docx / .pptx / .pdf",
+    failed: "文件解析失败，请重试或换一份文档",
+    truncatedNotice: "文档过长，已自动截取前后内容（适配模型上下文）。可在下方编辑后再生成。",
+  },
   nav: {
     themes: "主题",
     startArrow: "开始创作 →",

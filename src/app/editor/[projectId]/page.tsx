@@ -16,6 +16,7 @@ import {
 } from "@/lib/db";
 import { UserCenter } from "@/components/user-center";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { FileUploadButton } from "@/components/file-upload-button";
 import { useTranslation } from "@/i18n";
 
 function VersionPanel({
@@ -594,6 +595,14 @@ export default function EditorPage() {
                   placeholder={t("editor.pastePlaceholder")}
                   className="w-full h-48 px-3 py-2.5 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                   autoFocus
+                />
+                <FileUploadButton
+                  variant="wide"
+                  disabled={isGenerating}
+                  onText={(text, meta) => {
+                    const notice = meta.truncated ? `\n\n[${t("upload.truncatedNotice")}]` : "";
+                    setSourceText(text + notice);
+                  }}
                 />
                 <button
                   onClick={handleGenerate}

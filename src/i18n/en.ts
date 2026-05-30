@@ -216,6 +216,15 @@ export const en: Dict = {
     privacy: "Privacy policy",
     refund: "Refund policy",
   },
+  upload: {
+    button: "Upload file",
+    hint: ".docx / .pptx / .pdf, up to 4MB",
+    parsing: "Parsing {name}…",
+    tooLarge: "File too large — maximum 4MB",
+    unsupported: "Unsupported format — only .docx, .pptx, .pdf are accepted",
+    failed: "Couldn't parse the file. Try another document.",
+    truncatedNotice: "Document was long, so we kept the beginning and end (to fit the model context). You can still edit before generating.",
+  },
   nav: {
     themes: "Themes",
     startArrow: "Start creating →",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/stores/editor";
 import { UserCenter } from "@/components/user-center";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { FileUploadButton } from "@/components/file-upload-button";
 import { useTranslation } from "@/i18n";
 import { THEMES, THEMES_A, THEMES_B } from "@/types";
 import type { ThemeId, Theme } from "@/types";
@@ -331,18 +332,30 @@ export default function DashboardPage() {
                   </>
                 )}
               </div>
-              <button
-                onClick={handleSubmit}
-                disabled={!inputText.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 bg-accent text-accent-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-30"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                {t("dashboard.generate")}
-              </button>
+              <div className="flex items-center gap-2">
+                <FileUploadButton
+                  variant="compact"
+                  onText={(text, meta) => {
+                    const notice = meta.truncated ? `\n\n[${t("upload.truncatedNotice")}]` : "";
+                    setInputText(text + notice);
+                  }}
+                />
+                <button
+                  onClick={handleSubmit}
+                  disabled={!inputText.trim()}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-accent text-accent-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-30"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  {t("dashboard.generate")}
+                </button>
+              </div>
             </div>
           </div>
+          <p className="mt-2.5 text-center text-[11px] text-muted-foreground/70">
+            {t("upload.hint")}
+          </p>
         </div>
 
         {/* User's PPTs row */}
