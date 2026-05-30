@@ -12,7 +12,7 @@ import {
   dbGetProject,
   dbUpdateProject,
   dbSaveAfterGeneration,
-  dbConsumeCredits,
+  // dbConsumeCredits removed — credits now charged server-side in /api/projects/agent
 } from "@/lib/db";
 import { UserCenter } from "@/components/user-center";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -305,6 +305,20 @@ export default function EditorPage() {
 
       if (!res.ok) {
         const err = await res.json();
+        // Credit exhausted — route user to pricing instead of generic error
+        if (res.status === 402 || err.code === "INSUFFICIENT_CREDITS") {
+          appendMessage(
+            createMessage(
+              "assistant",
+              `${err.error || "积分不足"}（当前余额 ${err.credits ?? 0} 积分）`
+            )
+          );
+          setGenerating(false);
+          abortRef.current = null;
+          // Soft-nudge to pricing after a brief delay so user can read the message
+          setTimeout(() => router.push("/pricing"), 1200);
+          return;
+        }
         throw new Error(err.error || "处理失败");
       }
 
@@ -362,25 +376,15 @@ export default function EditorPage() {
                 // This prevents the loading effect from fetching empty currentHtml.
                 await saveVersion(pid, fullHtml, t("editor.versionInitial"));
                 navigateToProject(pid);
-                dbConsumeCredits({
-                  // 25 credits ≈ $0.025 (AI $0.015 + image search $0.010)
-                  amount: 25,
-                  description: t("userCenter.generate"),
-                  projectTitle: projectTitle || t("common.untitled"),
-                  type: "generate",
-                }).catch(() => {});
+                // NOTE: credit deduction is now handled server-side by
+                // /api/projects/agent (see src/lib/credits.ts). Do NOT call
+                // dbConsumeCredits here or users get double-charged.
               } else if (mode === "edit") {
                 // Update message BEFORE saveVersion
                 updateLastAssistantMessage(t("editor.msgEditDone", { text: userMsg }));
                 if (projectId) {
                   await saveVersion(projectId, fullHtml, t("editor.versionEdit", { text: userMsg.slice(0, 30) }));
-                  dbConsumeCredits({
-                    // 18 credits ≈ $0.018 (full HTML round-trip)
-                    amount: 18,
-                    description: `${t("userCenter.edit")}: ${userMsg.slice(0, 20)}`,
-                    projectTitle: projectTitle || t("common.untitled"),
-                    type: "edit",
-                  }).catch(() => {});
+                  // Credit deduction handled server-side — see note above.
                 }
               }
               setGenerating(false);

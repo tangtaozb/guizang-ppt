@@ -10,6 +10,12 @@ import type { ThemeId } from "@/types";
 import { getThemeStyle } from "@/types";
 import { getAuthUser } from "@/lib/auth";
 import { routeMessage, quickClassify } from "@/lib/agent";
+import {
+  CREDIT_COST,
+  chargeCredits,
+  getCreditBalance,
+  refundCredits,
+} from "@/lib/credits";
 
 export const runtime = "nodejs";
 
@@ -57,15 +63,36 @@ export async function POST(req: NextRequest) {
     const activeTheme: ThemeId = theme || "ink-classic";
     const themeName = getThemeName(activeTheme);
 
+    // ── Credit pre-check: block 0-credit users at the gate ──
+    // The cheapest non-chat action is edit (18 credits). If user can't even
+    // afford an edit, reject before spending any OpenAI tokens on routing.
+    const balance = await getCreditBalance(user.id);
+    const minCostToProceed = Math.min(CREDIT_COST.edit, CREDIT_COST.generate);
+    if (balance < minCostToProceed) {
+      return creditExhaustedResponse(balance);
+    }
+
     // ── Fast path: sourceText + no HTML → generate (unless clearly chat) ──
-    // When user provides sourceText from dashboard, skip Agent routing —
-    // but only if the text looks like a topic, not a greeting/question.
     if (sourceText?.trim() && !hasHtml && quickClassify(sourceText.trim()) !== "chat") {
+      if (balance < CREDIT_COST.generate) return creditExhaustedResponse(balance);
+      const charge = await chargeCredits({
+        userId: user.id,
+        amount: CREDIT_COST.generate,
+        type: "generate",
+        description: "生成演示文稿",
+        projectTitle: "",
+      });
+      if (!charge.ok) return creditExhaustedResponse(charge.remaining);
+
       const genSourceText = sourceText.trim();
       const style = getThemeStyle(activeTheme);
       const systemPrompt = buildSystemPrompt(style);
       const userPrompt = buildGeneratePrompt(genSourceText, activeTheme);
-      return streamHtmlResponse("generate", systemPrompt, userPrompt, []);
+      return streamHtmlResponse("generate", systemPrompt, userPrompt, [], {
+        userId: user.id,
+        amount: CREDIT_COST.generate,
+        refundReason: "PPT 生成失败，已退还积分",
+      });
     }
 
     // ── Agent routing: decide what to do ──
@@ -80,7 +107,7 @@ export async function POST(req: NextRequest) {
     // ── Execute the chosen action ──
 
     if (route.tool === "chat_response") {
-      // Chat — no second LLM call needed, reply is already in route.content
+      // Chat — no charge (cost absorbed into routing overhead)
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         start(controller) {
@@ -99,19 +126,39 @@ export async function POST(req: NextRequest) {
     }
 
     if (route.tool === "generate_ppt") {
-      // Generate — always use agent's topic (route.content), NOT sourceText.
-      // sourceText from Zustand may be stale (e.g. a previous chat message).
-      // The sourceText fast path (lines 60-69) already handles dashboard→generate.
+      if (balance < CREDIT_COST.generate) return creditExhaustedResponse(balance);
+      const charge = await chargeCredits({
+        userId: user.id,
+        amount: CREDIT_COST.generate,
+        type: "generate",
+        description: "生成演示文稿",
+        projectTitle: "",
+      });
+      if (!charge.ok) return creditExhaustedResponse(charge.remaining);
+
       const genSourceText = route.content;
       const style = getThemeStyle(activeTheme);
       const systemPrompt = buildSystemPrompt(style);
       const userPrompt = buildGeneratePrompt(genSourceText, activeTheme);
 
-      return streamHtmlResponse("generate", systemPrompt, userPrompt, []);
+      return streamHtmlResponse("generate", systemPrompt, userPrompt, [], {
+        userId: user.id,
+        amount: CREDIT_COST.generate,
+        refundReason: "PPT 生成失败，已退还积分",
+      });
     }
 
     if (route.tool === "modify_ppt") {
-      // Edit — use the refined instruction from agent
+      if (balance < CREDIT_COST.edit) return creditExhaustedResponse(balance);
+      const charge = await chargeCredits({
+        userId: user.id,
+        amount: CREDIT_COST.edit,
+        type: "edit",
+        description: `编辑：${(route.content || "").slice(0, 20)}`,
+        projectTitle: "",
+      });
+      if (!charge.ok) return creditExhaustedResponse(charge.remaining);
+
       const isSwiss =
         currentHtml!.includes("--accent:") &&
         currentHtml!.includes("--grey-1:");
@@ -133,7 +180,11 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return streamHtmlResponse("edit", systemPrompt, userPrompt, history);
+      return streamHtmlResponse("edit", systemPrompt, userPrompt, history, {
+        userId: user.id,
+        amount: CREDIT_COST.edit,
+        refundReason: "PPT 编辑失败，已退还积分",
+      });
     }
 
     // Fallback: shouldn't reach here
@@ -151,14 +202,39 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/** 402 response shape — frontend reads `credits` to show the right CTA. */
+function creditExhaustedResponse(remaining: number): Response {
+  return new Response(
+    JSON.stringify({
+      error: "积分不足，请前往定价页升级套餐",
+      code: "INSUFFICIENT_CREDITS",
+      credits: remaining,
+    }),
+    {
+      status: 402,
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+}
+
+interface ChargeContext {
+  userId: string;
+  amount: number;
+  refundReason: string;
+}
+
 /**
  * Build and return a streaming HTML response (for generate or edit).
+ *
+ * Caller must have already charged credits before calling this. If the
+ * LLM stream errors out, this auto-refunds via `chargeCtx`.
  */
 async function streamHtmlResponse(
   mode: "generate" | "edit",
   systemPrompt: string,
   userPrompt: string,
-  history: { role: "user" | "assistant"; content: string }[]
+  history: { role: "user" | "assistant"; content: string }[],
+  chargeCtx?: ChargeContext
 ): Promise<Response> {
   const messages: { role: "system" | "user" | "assistant"; content: string }[] =
     [{ role: "system", content: systemPrompt }];
@@ -180,22 +256,55 @@ async function streamHtmlResponse(
       controller.enqueue(encoder.encode(sseEvent({ type: "mode", mode })));
     },
     async pull(controller) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          const processed = await postProcessHtml(fullContent);
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            // Validate output is non-empty before treating as success
+            const trimmed = fullContent.trim();
+            const hasDoctype = trimmed.includes("<!DOCTYPE") || trimmed.includes("<html");
+            if (!trimmed || !hasDoctype) {
+              if (chargeCtx) {
+                await refundCredits({
+                  userId: chargeCtx.userId,
+                  amount: chargeCtx.amount,
+                  reason: chargeCtx.refundReason,
+                });
+              }
+              controller.enqueue(
+                encoder.encode(
+                  sseEvent({ type: "error", message: "LLM 输出为空或格式错误，已退还积分" })
+                )
+              );
+              controller.close();
+              return;
+            }
+            const processed = await postProcessHtml(fullContent);
+            controller.enqueue(
+              encoder.encode(sseEvent({ type: "complete", html: processed }))
+            );
+            controller.close();
+            return;
+          }
+          fullContent += value;
           controller.enqueue(
-            encoder.encode(
-              sseEvent({ type: "complete", html: processed })
-            )
+            encoder.encode(sseEvent({ type: "delta", content: value }))
           );
-          controller.close();
-          return;
         }
-        fullContent += value;
+      } catch (e) {
+        // LLM error — auto-refund
+        if (chargeCtx) {
+          await refundCredits({
+            userId: chargeCtx.userId,
+            amount: chargeCtx.amount,
+            reason: chargeCtx.refundReason,
+          });
+        }
+        const msg = e instanceof Error ? e.message : String(e);
         controller.enqueue(
-          encoder.encode(sseEvent({ type: "delta", content: value }))
+          encoder.encode(sseEvent({ type: "error", message: `${msg}（已退还积分）` }))
         );
+        controller.close();
       }
     },
   });

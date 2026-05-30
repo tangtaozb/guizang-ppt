@@ -49,7 +49,12 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// POST /api/db/credits — consume credits
+// POST /api/db/credits — consume credits (atomic)
+//
+// NOTE: this endpoint is kept only for client-initiated bookkeeping calls
+// (e.g. external purchases). For LLM-driven generate/edit actions, the
+// /api/projects/agent endpoint now charges credits server-side via the
+// chargeCredits() helper, so the frontend should NOT call this for those flows.
 export async function POST(req: NextRequest) {
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
@@ -62,7 +67,6 @@ export async function POST(req: NextRequest) {
     type: "generate" | "edit" | "purchase";
   };
 
-  // Get current credits
   const { data: profile } = await supabase
     .from("profiles")
     .select("credits")
@@ -73,9 +77,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "用户不存在" }, { status: 404 });
   }
 
-  const newCredits = Math.max(0, profile.credits - amount);
+  // Hard reject if balance < amount — no more silent clamping.
+  if (profile.credits < amount) {
+    return NextResponse.json(
+      {
+        error: "积分不足，请前往定价页升级套餐",
+        code: "INSUFFICIENT_CREDITS",
+        credits: profile.credits,
+        needed: amount,
+      },
+      { status: 402 }
+    );
+  }
 
-  // Update credits + insert record
+  const newCredits = profile.credits - amount;
+
   await Promise.all([
     supabase
       .from("profiles")
