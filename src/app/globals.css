@@ -60,6 +60,65 @@ body {
   }
 }
 
+/* ============ Motion: 淡入 / 上浮 / 漂浮 ============ */
+@keyframes as-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes as-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+/* 进入即播放的淡入上浮（首屏用，配 inline animation-delay 做错峰） */
+.as-rise {
+  opacity: 0;
+  animation: as-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 滚动进入视口时触发（下方内容用，由 IntersectionObserver 加 .is-in） */
+.as-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.as-reveal.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 永续轻漂浮（hero 主体用，delay 让进入动画先完成） */
+.as-float {
+  animation: as-float 7s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .as-rise,
+  .as-reveal,
+  .as-float {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
 .split-pane {
   display: flex;
   height: calc(100vh - 57px);

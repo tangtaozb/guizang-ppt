@@ -216,7 +216,7 @@ export const zh = {
   },
   upload: {
     button: "上传文件",
-    hint: "支持 .docx / .pptx / .pdf（≤4MB）",
+    hint: "支持 .docx / .pptx / .pdf（≤4MB）· 仅提取文本内容，不保留图片与排版",
     parsing: "正在解析 {name}…",
     tooLarge: "文件过大，最大 4MB",
     unsupported: "不支持的文件格式，仅支持 .docx / .pptx / .pdf",
@@ -248,8 +248,8 @@ export const zh = {
     why3Body: "下载一个 .html 文件，离线播放、键盘翻页、打印 PDF 全都自带。不依赖账户、不依赖云。",
 
     finalKicker: "—— READY WHEN YOU ARE ——",
-    finalTitle1: "粘上文字，",
-    finalTitle2: "拿走一份演示。",
+    finalTitle1: "对话式幻灯片生成",
+    finalTitle2: "AI Agent",
   },
   pricingX: {
     // 新版 Pricing 设计稿专用

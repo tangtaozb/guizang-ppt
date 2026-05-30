@@ -218,7 +218,7 @@ export const en: Dict = {
   },
   upload: {
     button: "Upload file",
-    hint: ".docx / .pptx / .pdf, up to 4MB",
+    hint: ".docx / .pptx / .pdf, up to 4MB · text only, images & layout not preserved",
     parsing: "Parsing {name}…",
     tooLarge: "File too large — maximum 4MB",
     unsupported: "Unsupported format — only .docx, .pptx, .pdf are accepted",
@@ -249,8 +249,8 @@ export const en: Dict = {
     why3Body: "Download one .html file. Offline playback, keyboard nav, print-to-PDF, all built in. No account dependency, no cloud.",
 
     finalKicker: "—— READY WHEN YOU ARE ——",
-    finalTitle1: "Paste your text,",
-    finalTitle2: "walk away with a deck.",
+    finalTitle1: "A conversational",
+    finalTitle2: "slide-making AI agent.",
   },
   pricingX: {
     kicker: "—— PRICING · THREE PLANS ——",
