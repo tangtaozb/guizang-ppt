@@ -1,26 +1,11 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@/i18n";
-
-interface FileUploadButtonProps {
-  /**
-   * Called whenever the set of successfully-parsed files changes, with the
-   * combined plain text of ALL parsed files (empty string when none remain).
-   * The parent merges this with any manually-typed text at generate time.
-   */
-  onFilesChange: (combinedText: string) => void;
-  /** Disable the trigger (e.g. while a generation is in flight). */
-  disabled?: boolean;
-  /** Optional className for the root container. */
-  className?: string;
-  /** "compact" = small button (dashboard). "wide" = dashed drop zone (editor). */
-  variant?: "compact" | "wide";
-}
 
 type FileStatus = "parsing" | "done" | "error";
 
-interface UploadedFile {
+export interface UploadedFile {
   id: number;
   name: string;
   ext: string; // docx | pptx | pdf | <other>
@@ -47,35 +32,17 @@ function formatSize(bytes: number): string {
 }
 
 /**
- * Upload UI for docx/pptx/pdf source material.
- * - Supports selecting / dropping MULTIPLE files at once.
- * - Each file becomes a chip showing name + format + size + status.
- * - Extracted text is NOT shown (no big-text preview); it's reported to the
- *   parent via onFilesChange and merged at generate time.
+ * Owns the uploaded-file list + parsing. State is lifted into the parent so the
+ * chips (FileChips) and the trigger (FileUploadTrigger) can live in different
+ * places in the layout — e.g. chips ABOVE the textarea, trigger in the toolbar.
+ *
+ * `combinedText` is the merged plain text of all parsed files; the parent merges
+ * it with any manually-typed text at generate time.
  */
-export function FileUploadButton({
-  onFilesChange,
-  disabled,
-  className = "",
-  variant = "compact",
-}: FileUploadButtonProps) {
+export function useFileUploads(disabled?: boolean) {
   const { t } = useTranslation();
-  const inputRef = useRef<HTMLInputElement>(null);
   const idRef = useRef(0);
   const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [isDragOver, setIsDragOver] = useState(false);
-
-  // Recompute the combined text from a files snapshot and notify the parent.
-  const emit = useCallback(
-    (list: UploadedFile[]) => {
-      const combined = list
-        .filter((f) => f.status === "done" && f.text.trim())
-        .map((f) => `【${f.name}】\n${f.text.trim()}`)
-        .join("\n\n");
-      onFilesChange(combined);
-    },
-    [onFilesChange]
-  );
 
   const parseFile = useCallback(
     async (id: number, file: File) => {
@@ -87,15 +54,11 @@ export function FileUploadButton({
           body: formData,
         });
         const json = await res.json().catch(() => ({}));
-        setFiles((prev) => {
-          const next = prev.map((f): UploadedFile => {
+        setFiles((prev) =>
+          prev.map((f): UploadedFile => {
             if (f.id !== id) return f;
             if (!res.ok) {
-              return {
-                ...f,
-                status: "error",
-                error: json.error || t("upload.failed"),
-              };
+              return { ...f, status: "error", error: json.error || t("upload.failed") };
             }
             return {
               ...f,
@@ -103,22 +66,18 @@ export function FileUploadButton({
               text: json.text || "",
               truncated: !!json.meta?.truncated,
             };
-          });
-          emit(next);
-          return next;
-        });
+          })
+        );
       } catch (e) {
         console.error("[upload] failed:", e);
-        setFiles((prev) => {
-          const next = prev.map((f): UploadedFile =>
+        setFiles((prev) =>
+          prev.map((f): UploadedFile =>
             f.id === id ? { ...f, status: "error", error: t("upload.failed") } : f
-          );
-          emit(next);
-          return next;
-        });
+          )
+        );
       }
     },
-    [emit, t]
+    [t]
   );
 
   const addFiles = useCallback(
@@ -154,37 +113,136 @@ export function FileUploadButton({
     [disabled, parseFile, t]
   );
 
-  const removeFile = useCallback(
-    (id: number) => {
-      setFiles((prev) => {
-        const next = prev.filter((f) => f.id !== id);
-        emit(next);
-        return next;
-      });
-    },
-    [emit]
+  const removeFile = useCallback((id: number) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const combinedText = useMemo(
+    () =>
+      files
+        .filter((f) => f.status === "done" && f.text.trim())
+        .map((f) => `【${f.name}】\n${f.text.trim()}`)
+        .join("\n\n"),
+    [files]
   );
 
+  return { files, addFiles, removeFile, combinedText };
+}
+
+/**
+ * Horizontal, scrollable row of file cards. Renders nothing when empty.
+ * Place this ABOVE the textarea (over the placeholder area).
+ *
+ * Each card's name is capped at 8em — at the card's font size, 1 CJK glyph ≈ 1em,
+ * so 8em ≈ 8 Chinese characters wide; longer names truncate with an ellipsis and
+ * reveal the full name on hover (title).
+ */
+export function FileChips({
+  files,
+  onRemove,
+}: {
+  files: UploadedFile[];
+  onRemove: (id: number) => void;
+}) {
+  const { t } = useTranslation();
+  if (files.length === 0) return null;
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15">
+      {files.map((f) => (
+        <div
+          key={f.id}
+          className={`shrink-0 flex items-center gap-1.5 rounded-lg border py-1 pl-1.5 pr-1 text-xs ${
+            f.status === "error"
+              ? "border-red-200 bg-red-50/60"
+              : "border-border bg-muted/40"
+          }`}
+        >
+          <FormatBadge ext={f.ext} status={f.status} />
+          <div className="min-w-0">
+            <div
+              className="max-w-[8em] truncate font-medium leading-tight text-foreground/90"
+              title={f.name}
+            >
+              {f.name}
+            </div>
+            <div className="max-w-[8em] truncate text-[10px] leading-tight text-muted-foreground">
+              {f.status === "error" ? (
+                <span className="text-red-500" title={f.error}>
+                  {f.error}
+                </span>
+              ) : f.status === "parsing" ? (
+                <span className="inline-flex items-center gap-1">
+                  <Spinner />
+                  {formatSize(f.size)}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  {formatSize(f.size)}
+                  {f.truncated && (
+                    <span title={t("upload.truncatedNotice")} className="text-amber-600">
+                      ✂
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemove(f.id)}
+            title={t("common.delete")}
+            className="ml-0.5 shrink-0 text-muted-foreground/60 transition-colors hover:text-red-500"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The upload trigger only — a small button ("compact", for toolbars) or a dashed
+ * drop zone ("wide", for the editor). Drag-and-drop is scoped to the trigger.
+ * Parsed files are reported via onFiles → the parent's useFileUploads().addFiles.
+ */
+export function FileUploadTrigger({
+  onFiles,
+  disabled,
+  className = "",
+  variant = "compact",
+}: {
+  onFiles: (files: FileList | null) => void;
+  disabled?: boolean;
+  className?: string;
+  variant?: "compact" | "wide";
+}) {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const triggerSelect = () => inputRef.current?.click();
   const onSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    addFiles(e.target.files);
+    onFiles(e.target.files);
     e.target.value = ""; // allow re-selecting the same file
   };
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     if (disabled) return;
-    addFiles(e.dataTransfer.files);
+    onFiles(e.dataTransfer.files);
   };
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     if (!disabled) setIsDragOver(true);
   };
   const onDragLeave = () => setIsDragOver(false);
-  const triggerSelect = () => inputRef.current?.click();
 
   return (
     <div
-      className={`${variant === "compact" ? "flex flex-col items-start gap-2" : ""} ${className}`}
+      className={`${variant === "wide" ? "w-full" : "inline-flex"} ${className}`}
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
@@ -198,13 +256,12 @@ export function FileUploadButton({
         className="hidden"
         disabled={disabled}
       />
-
       {variant === "compact" ? (
         <button
           type="button"
           onClick={triggerSelect}
           disabled={disabled}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors disabled:opacity-50 ${
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors disabled:opacity-50 ${
             isDragOver ? "border-accent bg-accent/5" : "border-border hover:bg-muted/50"
           }`}
         >
@@ -216,68 +273,16 @@ export function FileUploadButton({
           type="button"
           onClick={triggerSelect}
           disabled={disabled}
-          className={`w-full flex flex-col items-center justify-center gap-2 py-6 px-4 rounded-lg border-2 border-dashed transition-colors disabled:opacity-50 ${
+          className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 transition-colors disabled:opacity-50 ${
             isDragOver
               ? "border-accent bg-accent/5"
               : "border-border hover:border-accent/60 hover:bg-muted/30"
           }`}
         >
-          <UploadIcon className="w-5 h-5" />
+          <UploadIcon className="h-5 w-5" />
           <span className="text-sm font-medium">{t("upload.button")}</span>
           <span className="text-[11px] text-muted-foreground">{t("upload.hint")}</span>
         </button>
-      )}
-
-      {files.length > 0 && (
-        <ul className={`w-full space-y-1.5 ${variant === "wide" ? "mt-2" : ""}`}>
-          {files.map((f) => (
-            <li
-              key={f.id}
-              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${
-                f.status === "error" ? "border-red-200 bg-red-50/50" : "border-border bg-muted/30"
-              }`}
-            >
-              <FormatBadge ext={f.ext} status={f.status} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-medium text-foreground/90">{f.name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {f.status === "error" ? (
-                    <span className="text-red-500">{f.error}</span>
-                  ) : f.status === "parsing" ? (
-                    <span className="inline-flex items-center gap-1">
-                      <Spinner />
-                      <span>
-                        {f.ext.toUpperCase()} · {formatSize(f.size)}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5">
-                      {f.ext.toUpperCase()} · {formatSize(f.size)}
-                      {f.truncated && (
-                        <span
-                          title={t("upload.truncatedNotice")}
-                          className="rounded bg-amber-100 px-1 text-[10px] text-amber-700"
-                        >
-                          ✂
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeFile(f.id)}
-                title={t("common.delete")}
-                className="shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   );
@@ -314,7 +319,7 @@ function UploadIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
 
 function Spinner() {
   return (
-    <svg className="animate-spin w-3 h-3 text-muted-foreground" fill="none" viewBox="0 0 24 24">
+    <svg className="h-3 w-3 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
       <path d="M22 12a10 10 0 01-10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
     </svg>

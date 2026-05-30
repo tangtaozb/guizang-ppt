@@ -16,7 +16,7 @@ import {
 } from "@/lib/db";
 import { UserCenter } from "@/components/user-center";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { FileUploadButton } from "@/components/file-upload-button";
+import { useFileUploads, FileChips, FileUploadTrigger } from "@/components/file-upload-button";
 import { useTranslation } from "@/i18n";
 
 function VersionPanel({
@@ -133,7 +133,7 @@ export default function EditorPage() {
   // to generate. This avoids a flash of the source-input view during dashboard→editor
   // navigation race conditions.
   const [showSourceInput, setShowSourceInput] = useState(false);
-  const [filesText, setFilesText] = useState("");
+  const { files, addFiles, removeFile, combinedText: filesText } = useFileUploads(isGenerating);
   const [isComposing, setIsComposing] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(isNew ? null : paramId);
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
@@ -590,6 +590,7 @@ export default function EditorPage() {
                     {t("editor.pasteContentDesc")}
                   </p>
                 </div>
+                {files.length > 0 && <FileChips files={files} onRemove={removeFile} />}
                 <textarea
                   value={sourceText}
                   onChange={(e) => setSourceText(e.target.value)}
@@ -597,10 +598,10 @@ export default function EditorPage() {
                   className="w-full h-48 px-3 py-2.5 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                   autoFocus
                 />
-                <FileUploadButton
+                <FileUploadTrigger
                   variant="wide"
                   disabled={isGenerating}
-                  onFilesChange={setFilesText}
+                  onFiles={addFiles}
                 />
                 <button
                   onClick={handleGenerate}

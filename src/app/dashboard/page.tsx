@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/stores/editor";
 import { UserCenter } from "@/components/user-center";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { FileUploadButton } from "@/components/file-upload-button";
+import { useFileUploads, FileChips, FileUploadTrigger } from "@/components/file-upload-button";
 import { useTranslation } from "@/i18n";
 import { THEMES, THEMES_A, THEMES_B } from "@/types";
 import type { ThemeId, Theme } from "@/types";
@@ -267,7 +267,7 @@ export default function DashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [inputText, setInputText] = useState("");
-  const [filesText, setFilesText] = useState("");
+  const { files, addFiles, removeFile, combinedText: filesText } = useFileUploads();
   const [selectedTheme, setSelectedTheme] = useState<ThemeId | "auto">("auto");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -371,6 +371,11 @@ export default function DashboardPage() {
 
           {/* Composer */}
           <div className="bg-white rounded-2xl border border-[#e7e3da] shadow-[0_2px_16px_-6px_rgba(20,15,8,0.12)] focus-within:border-accent/40 focus-within:shadow-[0_6px_26px_-8px_rgba(167,47,36,0.22)] transition-all">
+            {files.length > 0 && (
+              <div className="px-3.5 pt-3.5">
+                <FileChips files={files} onRemove={removeFile} />
+              </div>
+            )}
             <textarea
               ref={textareaRef}
               value={inputText}
@@ -468,10 +473,7 @@ export default function DashboardPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <FileUploadButton
-                  variant="compact"
-                  onFilesChange={setFilesText}
-                />
+                <FileUploadTrigger variant="compact" onFiles={addFiles} />
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit}
