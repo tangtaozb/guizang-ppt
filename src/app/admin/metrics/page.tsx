@@ -321,6 +321,8 @@ export default function AdminMetricsPage() {
   }
 
   useEffect(() => {
+    // load 是可复用的 async fetch（也用于刷新）；挂载即取数是合法模式，规则在此过严。
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 合法的 fetch-on-mount
     load();
   }, []);
 

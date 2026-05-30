@@ -124,6 +124,7 @@ export default function PricingPage() {
       }
       const json = await res.json();
       if (!res.ok || !json.url) throw new Error(json.error || "创建 Checkout 失败");
+      // eslint-disable-next-line react-hooks/immutability -- 合法的浏览器跳转（window.location 赋值），非状态突变
       window.location.href = json.url;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

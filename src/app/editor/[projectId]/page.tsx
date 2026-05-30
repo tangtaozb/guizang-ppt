@@ -208,6 +208,7 @@ export default function EditorPage() {
       setShowSourceInput(false);
       // All messages go through the unified Agent endpoint
       // The Agent will decide whether to generate PPT or chat
+      // eslint-disable-next-line react-hooks/immutability -- handleSendMessage 为下方 useCallback；effect 在渲染后才执行，调用时已声明（运行时安全）
       handleSendMessage(sourceText);
     }
   });
