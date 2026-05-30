@@ -3,6 +3,10 @@
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    // Install pdfjs browser-global stubs at cold-start, BEFORE any route module
+    // (incl. pdfjs) is evaluated. Fixes "DOMMatrix is not defined" on Vercel.
+    const { installPdfGlobals } = await import("./src/lib/pdf-globals");
+    installPdfGlobals();
     await import("./sentry.server.config");
   }
   if (process.env.NEXT_RUNTIME === "edge") {

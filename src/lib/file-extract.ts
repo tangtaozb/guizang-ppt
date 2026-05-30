@@ -19,59 +19,7 @@
 
 import { parseOfficeAsync } from "officeparser";
 import { tmpdir } from "os";
-
-/**
- * Install no-op stubs for the browser globals pdfjs references at module-eval
- * time. Idempotent; only fills globals that are missing. Must run BEFORE the
- * dynamic import of pdfjs. Text extraction doesn't invoke their methods.
- */
-function ensurePdfGlobals(): void {
-  const g = globalThis as Record<string, unknown>;
-  if (typeof g.DOMMatrix === "undefined") {
-    g.DOMMatrix = class DOMMatrix {
-      a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
-      constructor(init?: number[] | string) {
-        if (Array.isArray(init) && init.length >= 6) {
-          [this.a, this.b, this.c, this.d, this.e, this.f] = init;
-        }
-      }
-      multiply() { return this; }
-      translate() { return this; }
-      scale() { return this; }
-      inverse() { return this; }
-      transformPoint(p: unknown) { return p; }
-    };
-  }
-  if (typeof g.Path2D === "undefined") {
-    g.Path2D = class Path2D {
-      addPath() {} moveTo() {} lineTo() {} bezierCurveTo() {}
-      quadraticCurveTo() {} arc() {} closePath() {} rect() {}
-    };
-  }
-  if (typeof g.ImageData === "undefined") {
-    g.ImageData = class ImageData {
-      width: number; height: number; data: Uint8ClampedArray;
-      constructor(w: number, h: number) {
-        this.width = w; this.height = h;
-        this.data = new Uint8ClampedArray((w * h || 0) * 4);
-      }
-    };
-  }
-  if (typeof g.DOMRect === "undefined") {
-    g.DOMRect = class DOMRect {
-      x: number; y: number; width: number; height: number;
-      constructor(x = 0, y = 0, w = 0, h = 0) {
-        this.x = x; this.y = y; this.width = w; this.height = h;
-      }
-    };
-  }
-  if (typeof g.DOMPoint === "undefined") {
-    g.DOMPoint = class DOMPoint {
-      x: number; y: number;
-      constructor(x = 0, y = 0) { this.x = x; this.y = y; }
-    };
-  }
-}
+import { installPdfGlobals } from "./pdf-globals";
 
 export type FileKind = "docx" | "pptx" | "pdf";
 export const ACCEPTED_EXTS: FileKind[] = ["docx", "pptx", "pdf"];
@@ -106,7 +54,7 @@ export function inferKind(fileName: string, mime: string | undefined): FileKind 
  * see the file header for why officeparser's built-in PDF handling hangs.
  */
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  ensurePdfGlobals(); // MUST run before importing pdfjs (module-eval needs them)
+  installPdfGlobals(); // defensive — also installed at cold-start in instrumentation.ts
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   // Import the worker MODULE (not a file path) so the bundler resolves it as a
   // dependency and ships it. require.resolve()'d physical paths break once Next
