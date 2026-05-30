@@ -16,6 +16,7 @@ export function SiteFooter() {
   const productLinks: FooterLink[] = [
     { href: "/#themes", label: t("nav.themes") },
     { href: "/pricing", label: t("common.pricing") },
+    { href: "/blog", label: "Blog" },
     { href: "/login", label: t("common.login") },
   ];
 

@@ -177,6 +177,7 @@ export default function DashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [inputText, setInputText] = useState("");
+  const [filesText, setFilesText] = useState("");
   const [selectedTheme, setSelectedTheme] = useState<ThemeId | "auto">("auto");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const { setSourceText, setTheme, reset } = useEditorStore();
@@ -188,9 +189,10 @@ export default function DashboardPage() {
   }, []);
 
   const handleSubmit = () => {
-    if (!inputText.trim()) return;
+    const combined = [inputText.trim(), filesText.trim()].filter(Boolean).join("\n\n");
+    if (!combined) return;
     reset();
-    setSourceText(inputText.trim());
+    setSourceText(combined);
     if (selectedTheme === "auto") {
       // Randomly pick a theme for variety (instead of always ink-classic)
       const allIds = THEMES.map((t) => t.id);
@@ -335,14 +337,11 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <FileUploadButton
                   variant="compact"
-                  onText={(text, meta) => {
-                    const notice = meta.truncated ? `\n\n[${t("upload.truncatedNotice")}]` : "";
-                    setInputText(text + notice);
-                  }}
+                  onFilesChange={setFilesText}
                 />
                 <button
                   onClick={handleSubmit}
-                  disabled={!inputText.trim()}
+                  disabled={!inputText.trim() && !filesText.trim()}
                   className="flex items-center gap-1.5 px-4 py-2 bg-accent text-accent-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-30"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
