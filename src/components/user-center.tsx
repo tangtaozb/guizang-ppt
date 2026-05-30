@@ -39,14 +39,24 @@ function CreditHistoryModal({ onClose }: { onClose: () => void }) {
     });
 
   useEffect(() => {
-    setLoading(true);
-    dbGetCredits(page, PAGE_SIZE)
-      .then((data) => {
+    let cancelled = false;
+    // setState 收进 async 函数（而非直接写在 effect 体里），既消除 react-hooks/set-state-in-effect
+    // 告警，又用 cancelled 守卫掉快速翻页时旧请求覆盖新数据的竞态。
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await dbGetCredits(page, PAGE_SIZE);
+        if (cancelled) return;
         setRecords(data.records);
         setTotalPages(data.totalPages);
-      })
-      .catch(() => setRecords([]))
-      .finally(() => setLoading(false));
+      } catch {
+        if (!cancelled) setRecords([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => { cancelled = true; };
   }, [page]);
 
   return createPortal(
