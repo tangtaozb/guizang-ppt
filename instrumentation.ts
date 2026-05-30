@@ -3,18 +3,6 @@
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    // Install pdfjs browser-global stubs at cold-start, then EAGERLY evaluate the
-    // pdfjs module while the stubs are in scope. pdfjs references DOMMatrix/etc.
-    // at module-eval time; doing the first import here (after the polyfill) means
-    // that eval succeeds and the module is cached, so the route's later import()
-    // reuses the already-evaluated module. Fixes "DOMMatrix is not defined".
-    const { installPdfGlobals } = await import("./src/lib/pdf-globals");
-    installPdfGlobals();
-    try {
-      await import("pdfjs-dist/legacy/build/pdf.mjs");
-    } catch {
-      // Non-fatal: the route-level defensive polyfill + import will retry.
-    }
     await import("./sentry.server.config");
   }
   if (process.env.NEXT_RUNTIME === "edge") {

@@ -2,15 +2,6 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  // officeparser parses PDFs via pdfjs-dist/legacy. Next's static file tracing
-  // only catches the pdf.mjs entry, NOT the sibling pdf.worker.mjs it loads at
-  // runtime — so on Vercel the worker is missing and every PDF parse fails
-  // (docx/pptx don't need pdfjs, hence they worked). Force the whole pdfjs build
-  // dir into this route's serverless function.
-  outputFileTracingIncludes: {
-    "/api/upload/extract": ["./node_modules/pdfjs-dist/legacy/build/**"],
-    "/api/diag-pdf": ["./node_modules/pdfjs-dist/legacy/build/**"],
-  },
   async headers() {
     return [
       {

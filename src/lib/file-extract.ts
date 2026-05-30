@@ -1,25 +1,20 @@
 // Server-side document parsing for user-uploaded source material.
 //
 // - docx / pptx → officeparser (yauzl + xmldom, works fine on serverless)
-// - pdf         → pdfjs-dist directly, with the worker pinned to the bundled
-//                 file and run on the main thread.
+// - pdf         → unpdf (a serverless-first wrapper around a bundled pdfjs)
 //
-// Why PDF is special — two serverless gotchas, both handled here:
-//  1. officeparser delegates PDFs to pdfjs but never sets
-//     GlobalWorkerOptions.workerSrc, so pdfjs tries to spawn a real worker that
-//     never initializes → getDocument() hangs → 504. We load pdfjs ourselves and
-//     pin workerSrc to the bundled pdf.worker.mjs (fake worker, main thread).
-//  2. pdfjs's pdf.mjs references browser globals (DOMMatrix, Path2D, ImageData,
-//     …) at MODULE-EVAL time. Vercel's Node runtime doesn't define them →
-//     "ReferenceError: DOMMatrix is not defined" the instant pdfjs is imported.
-//     We install minimal stubs BEFORE importing pdfjs. Text extraction never
-//     calls their methods, so no-op stubs suffice (verified on real PDFs).
+// Why PDF needs a dedicated library: officeparser's built-in PDF path uses the
+// full pdfjs-dist, which (a) tries to spawn a worker that hangs on serverless
+// and (b) references browser globals (DOMMatrix, Path2D, …) at module-eval time
+// that Vercel's Node runtime doesn't define → "DOMMatrix is not defined". We
+// fought both with polyfills/worker-pinning and lost to bundler eval ordering.
+// unpdf ships its own serverless-safe pdfjs build that needs neither a worker
+// nor those globals — verified parsing real PDFs with DOMMatrix deleted.
 //
 // Node runtime only — depends on Node Buffer / zlib.
 
 import { parseOfficeAsync } from "officeparser";
 import { tmpdir } from "os";
-import { installPdfGlobals } from "./pdf-globals";
 
 export type FileKind = "docx" | "pptx" | "pdf";
 export const ACCEPTED_EXTS: FileKind[] = ["docx", "pptx", "pdf"];
@@ -49,47 +44,15 @@ export function inferKind(fileName: string, mime: string | undefined): FileKind 
 }
 
 /**
- * Extract plain text from a PDF using pdfjs-dist directly, with the worker
- * disabled (run on the main thread). This is the serverless-safe path —
- * see the file header for why officeparser's built-in PDF handling hangs.
+ * Extract plain text from a PDF using unpdf, whose bundled pdfjs is built for
+ * serverless/edge — no worker thread, no DOMMatrix/Canvas globals required.
  */
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  installPdfGlobals(); // defensive — also installed at cold-start in instrumentation.ts
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  // Import the worker MODULE (not a file path) so the bundler resolves it as a
-  // dependency and ships it. require.resolve()'d physical paths break once Next
-  // relocates code into .next/chunks; importing the module sidesteps that.
-  await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
-
-  const doc = await pdfjs.getDocument({
-    data: new Uint8Array(buffer),
-    isEvalSupported: false,
-    useSystemFonts: true,
-    // Don't fetch external standard-font data over the network in serverless.
-    disableFontFace: true,
-  }).promise;
-
-  const parts: string[] = [];
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    let lastY: number | undefined;
-    let line = "";
-    for (const item of content.items) {
-      if (!("str" in item)) continue;
-      const y = item.transform[5];
-      if (lastY !== undefined && y !== lastY) {
-        parts.push(line);
-        line = "";
-      }
-      line += item.str;
-      lastY = y;
-    }
-    if (line) parts.push(line);
-    parts.push(""); // page break
-  }
-  await doc.cleanup().catch(() => {});
-  return parts.join("\n");
+  const { extractText: unpdfExtract, getDocumentProxy } = await import("unpdf");
+  const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  const { text } = await unpdfExtract(pdf, { mergePages: true });
+  // mergePages:true returns a single string; be defensive if an array comes back.
+  return Array.isArray(text) ? text.join("\n") : text;
 }
 
 /**
