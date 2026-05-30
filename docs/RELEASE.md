@@ -11,7 +11,7 @@
 
 - Vercel↔GitHub 已连：**push 即部署**（main→生产，其他分支→预览），无需手动 `vercel --prod`。
 - 预览安全边界由 **Vercel Preview 作用域环境变量** + 代码里的 `VERCEL_ENV` 守卫共同保证：
-  - 预览 `CREEM_API_URL=https://test-api.creem.io/v1` 且不配真 `CREEM_API_KEY` → **预览不可能真实扣款**。
+  - 预览 `CREEM_API_URL=https://test-api.creem.io/v1` 且不配真 `CREEM_API_KEY` → **预览不可能真实扣款**。再加一道代码硬保险：`creem.ts` 在 `VERCEL_ENV !== "production"` 时**强制走测试端点**——即便 Preview 哪天被误配了生产 key+URL，也扣不了款。
   - `src/app/robots.ts` / `src/app/layout.tsx` 用 `process.env.VERCEL_ENV === "production"` 判定，非生产一律 `noindex` 且关闭 GA。漏配 = 安全默认（不被索引）。
   - 预览**不配 `RESEND_API_KEY`** → `send-code` 把 OTP 内联返回（`route.ts:96-99`），测试登录免收件箱。
 
@@ -40,7 +40,7 @@ scripts/cleanup-task.sh <slug>
 1. **绝不在 `…/guizang-ppt`（main 主工作树）里直接改代码。** 每个任务都用 `new-task.sh` 开独立 worktree —— worktree 共享 `.git` 但工作文件/HEAD 独立，多窗口零干扰。
 2. **合并 main 只走 `ship.sh`。** 它强制 rebase 到最新 `origin/main`，跑 **`tsc --noEmit`（硬门禁，类型错误会让 Vercel 构建失败）** + `lint`（仅提示，Vercel 构建不跑 eslint）。没有 CI，tsc 这道闸就是挡住"类型错误进生产"的唯一防线。
 3. **push 被拒 = 有人先合了** → `ship.sh` 自动 fetch+rebase 重试。**永远不对 `main` 做 force-push。**
-4. push main 后**必须确认 Vercel 部署 Ready 而非 Error**（构建失败时生产停留在上一个好版本，但你的改动没上线）。
+4. **`ship.sh` 会自动轮询确认生产部署 Ready/Error**（不再靠人记得看）：Error 时它非零退出并提示看日志；构建失败时生产仍停在上一个好版本。
 
 ## staging（按需，可选）
 

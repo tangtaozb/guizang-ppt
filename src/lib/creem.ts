@@ -1,7 +1,14 @@
 // Creem.io 服务端封装：Checkout 创建 + Webhook 签名验证 + 套餐映射
 import crypto from "crypto";
 
-const CREEM_API_URL = process.env.CREEM_API_URL || "https://test-api.creem.io/v1";
+// 非生产部署（Vercel Preview / staging / 本地）强制走 Creem 测试端点：
+// 即便 Preview 作用域被误配了生产 CREEM_API_URL / CREEM_API_KEY，也不可能真实扣款
+// （生产 key 打到 test-api 会鉴权失败，安全）。VERCEL_ENV 由 Vercel 自动注入；
+// 缺省（本地）按非生产处理 —— 漏配=安全默认，绝不在非生产环境真扣款。
+const CREEM_API_URL =
+  process.env.VERCEL_ENV === "production"
+    ? process.env.CREEM_API_URL || "https://test-api.creem.io/v1"
+    : "https://test-api.creem.io/v1";
 const CREEM_API_KEY = process.env.CREEM_API_KEY || "";
 const CREEM_WEBHOOK_SECRET = process.env.CREEM_WEBHOOK_SECRET || "";
 
