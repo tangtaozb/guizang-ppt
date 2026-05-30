@@ -263,9 +263,9 @@ export const zh = {
   landingX: {
     // 新版 Landing 设计稿专用（与旧 landing.* 共存，旧 keys 还在被 dashboard 等地方使用）
     heroKicker: "ARTIFYSLIDE · 杂志感 × 瑞士设计",
-    heroTitle1: "把文字变成",
-    heroTitle2: "高级杂志风格 PPT。",
-    heroLede: "粘贴一段文字，ArtifySlide 用杂志感和瑞士设计的排版语法，生成可对话编辑的横向翻页 HTML 演示文稿。下载即用，无需安装。",
+    heroTitle1: "高级杂志风格 PPT",
+    heroTitle2: "AI Agent",
+    heroLede: "对话式 AI Agent 幻灯片生成编辑，极度简单。并用杂志感和瑞士设计的排版语法，让你的 PPT 高级感脱颖而出。",
     ctaPrimary: "开始创作 →",
     ctaSecondary: "看看 9 套主题 ↓",
 
@@ -339,7 +339,7 @@ export const zh = {
     faqPaymentA: "结算通过 Creem.io（Merchant of Record）。退款条款详见 Refund 页面。",
   },
   footer: {
-    tagline: "把文字变成高级杂志风格 PPT。杂志感 × 瑞士设计 × 对话式编辑。",
+    tagline: "高级杂志风格 PPT AI Agent。对话式生成 × 杂志感 × 瑞士设计。",
     colProduct: "产品",
     colLegal: "法律",
     colLang: "语言",

@@ -264,9 +264,9 @@ export const en: Dict = {
   },
   landingX: {
     heroKicker: "ARTIFYSLIDE · MAGAZINE × SWISS DESIGN",
-    heroTitle1: "Turn words into",
-    heroTitle2: "premium magazine-style decks.",
-    heroLede: "Paste any text. ArtifySlide composes a magazine-grade, horizontally-paged HTML deck — editable by chat, downloadable as a single file, no install.",
+    heroTitle1: "Premium magazine-style",
+    heroTitle2: "AI Agent for decks.",
+    heroLede: "A conversational AI agent that generates and edits slides — radically simple. Magazine × Swiss typography makes your decks stand out.",
     ctaPrimary: "Start creating →",
     ctaSecondary: "See the 9 themes ↓",
 
@@ -339,7 +339,7 @@ export const en: Dict = {
     faqPaymentA: "Billed via Creem.io (Merchant of Record). Refund terms on the Refund page.",
   },
   footer: {
-    tagline: "Turn words into premium magazine-style decks. Magazine × Swiss × Conversation.",
+    tagline: "A premium magazine-style AI agent for decks. Conversational × Magazine × Swiss design.",
     colProduct: "Product",
     colLegal: "Legal",
     colLang: "Language",
