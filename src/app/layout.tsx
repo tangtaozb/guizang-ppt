@@ -77,6 +77,11 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  verification: {
+    // GSC「网址前缀」https://www.artifyslide.com 验证。
+    // 同时上传了 public/google2b713bdf7d8775f3.html，meta 这行属于双保险。
+    google: "2b713bdf7d8775f3",
+  },
   category: "technology",
 };
 
