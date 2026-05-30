@@ -90,12 +90,16 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[upload/extract] parse error:", msg);
+    const stack = e instanceof Error ? e.stack : undefined;
+    // Full stack to the runtime log so we can diagnose env-specific failures
+    // (e.g. pdfjs on the wrong Node version, or a missing serverless chunk).
+    console.error(`[upload/extract] parse error (kind=${kind}, name=${file.name}):`, stack || msg);
     return NextResponse.json(
       {
         error: "文件解析失败，可能是受密码保护或文件损坏。",
         code: "PARSE_FAILED",
-        details: msg.slice(0, 200),
+        kind,
+        details: msg.slice(0, 300),
       },
       { status: 500 }
     );

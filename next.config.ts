@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // officeparser dynamically imports pdfjs-dist/legacy at runtime. Mark them
+  // external so the whole package (incl. pdfjs + its .mjs assets) ships into
+  // the serverless function instead of being bundled/tree-shaken — the dynamic
+  // import() otherwise risks resolving to a missing chunk on Vercel.
+  serverExternalPackages: ["officeparser", "pdfjs-dist"],
   async headers() {
     return [
       {
