@@ -6,6 +6,7 @@ import { useTranslation } from "@/i18n";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNav } from "@/components/layout/site-nav";
 import { THEMES, ThemeThumb } from "@/components/landing/theme-thumb";
+import { HeroShowcase } from "@/components/landing/hero-showcase";
 import { dbGetUser, type DbUserProfile } from "@/lib/db";
 import {
   JsonLd,
@@ -32,35 +33,45 @@ export default function LandingPage() {
       <SiteNav active="themes" />
 
       {/* ====== Hero ====== */}
-      <section className="mx-auto max-w-[1440px] px-6 sm:px-14 pt-20 sm:pt-30 pb-20 sm:pb-24">
-        <div className="flex items-center gap-2.5 font-mono text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          {t("landingX.heroKicker")}
-        </div>
+      <section className="mx-auto max-w-[1440px] px-6 sm:px-14 pt-16 sm:pt-24 pb-20 sm:pb-24">
+        <div className="grid items-center gap-12 lg:grid-cols-[1fr_minmax(0,520px)] lg:gap-16">
+          {/* 左：文案 */}
+          <div>
+            <div className="flex items-center gap-2.5 font-mono text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              {t("landingX.heroKicker")}
+            </div>
 
-        <h1 className="mt-6 max-w-[1180px] text-[48px] sm:text-[72px] lg:text-[104px] font-medium leading-[0.94] tracking-[-0.045em]">
-          {t("landingX.heroTitle1")}
-          <br />
-          <span className="text-muted-foreground font-serif">{t("landingX.heroTitle2")}</span>
-        </h1>
+            <h1 className="mt-6 text-[44px] sm:text-[64px] lg:text-[80px] font-medium leading-[0.96] tracking-[-0.045em]">
+              {t("landingX.heroTitle1")}
+              <br />
+              <span className="text-muted-foreground font-serif">{t("landingX.heroTitle2")}</span>
+            </h1>
 
-        <p className="mt-8 max-w-[620px] text-[17px] sm:text-[19px] leading-[1.55] text-neutral-700">
-          {t("landingX.heroLede")}
-        </p>
+            <p className="mt-7 max-w-[520px] text-[16px] sm:text-[18px] leading-[1.55] text-neutral-700">
+              {t("landingX.heroLede")}
+            </p>
 
-        <div className="mt-10 flex flex-wrap items-center gap-3">
-          <Link
-            href={startHref}
-            className="inline-flex h-11 items-center rounded-lg bg-foreground px-5 sm:px-6 text-[15px] font-medium text-white hover:opacity-90 transition-opacity"
-          >
-            {t("landingX.ctaPrimary")}
-          </Link>
-          <a
-            href="#themes"
-            className="inline-flex h-11 items-center rounded-lg border border-border bg-white px-4.5 text-[15px] font-medium hover:bg-muted transition-colors"
-          >
-            {t("landingX.ctaSecondary")}
-          </a>
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                href={startHref}
+                className="inline-flex h-11 items-center rounded-lg bg-foreground px-5 sm:px-6 text-[15px] font-medium text-white hover:opacity-90 transition-opacity"
+              >
+                {t("landingX.ctaPrimary")}
+              </Link>
+              <a
+                href="#themes"
+                className="inline-flex h-11 items-center rounded-lg border border-border bg-white px-4.5 text-[15px] font-medium hover:bg-muted transition-colors"
+              >
+                {t("landingX.ctaSecondary")}
+              </a>
+            </div>
+          </div>
+
+          {/* 右：风格展示器 */}
+          <div className="w-full">
+            <HeroShowcase />
+          </div>
         </div>
       </section>
 
