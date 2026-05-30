@@ -30,6 +30,44 @@ interface MetricsResponse {
   trend: { date: string; newUsers: number; newProjects: number }[];
 }
 
+type ServiceStatus = "ok" | "missing_env" | "error";
+
+interface IntegrationsResponse {
+  generatedAt: string;
+  vercel: { analytics: string; speedInsights: string; logs: string };
+  umami: {
+    status: ServiceStatus;
+    message?: string;
+    data?: {
+      pageviews: number;
+      visitors: number;
+      visits: number;
+      bounces: number;
+      totaltime: number;
+      topPages: { url: string; pageviews: number }[];
+      topReferrers: { referrer: string; visitors: number }[];
+      dashboardUrl: string;
+    };
+  };
+  sentry: {
+    status: ServiceStatus;
+    message?: string;
+    data?: {
+      errorsLast24h: number;
+      recentIssues: {
+        id: string;
+        title: string;
+        culprit: string;
+        count: number;
+        userCount: number;
+        lastSeen: string;
+        permalink: string;
+      }[];
+      dashboardUrl: string;
+    };
+  };
+}
+
 function Stat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="bg-white rounded-lg border border-zinc-200 p-4">
@@ -46,6 +84,207 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-zinc-500 mb-3">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function StatusPill({ status, msg }: { status?: ServiceStatus; msg?: string }) {
+  if (status === "ok") return null;
+  if (status === "missing_env") {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-[13px] text-amber-900">
+        <div className="font-semibold mb-1">未配置 · 待接入</div>
+        <div className="text-amber-800 font-mono text-[11.5px]">{msg}</div>
+      </div>
+    );
+  }
+  if (status === "error") {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-4 text-[13px] text-red-900">
+        <div className="font-semibold mb-1">API 调用失败</div>
+        <div className="text-red-800 font-mono text-[11.5px] break-all">{msg}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-zinc-50 border border-zinc-200 rounded-md p-4 text-[13px] text-zinc-500">
+      加载中…
+    </div>
+  );
+}
+
+function UmamiPanel({ umami }: { umami?: IntegrationsResponse["umami"] }) {
+  if (!umami || umami.status !== "ok" || !umami.data)
+    return <StatusPill status={umami?.status} msg={umami?.message} />;
+  const d = umami.data;
+  const bounceRate = d.visits > 0 ? ((d.bounces / d.visits) * 100).toFixed(1) : "0";
+  const avgTime =
+    d.visits > 0 ? `${Math.round(d.totaltime / d.visits)}s` : "0s";
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Stat label="PV (页面浏览)" value={d.pageviews.toLocaleString()} />
+        <Stat label="UV (独立访客)" value={d.visitors.toLocaleString()} />
+        <Stat label="跳出率" value={`${bounceRate}%`} />
+        <Stat label="平均停留" value={avgTime} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="bg-white rounded-lg border border-zinc-200 p-4">
+          <div className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2.5">
+            Top 页面
+          </div>
+          <ul className="space-y-1.5">
+            {d.topPages.length === 0 && (
+              <li className="text-[12px] text-zinc-400">— 暂无数据 —</li>
+            )}
+            {d.topPages.map((p) => (
+              <li
+                key={p.url}
+                className="flex items-baseline justify-between gap-3 text-[13px]"
+              >
+                <span className="font-mono truncate text-zinc-700">{p.url}</span>
+                <span className="tabular-nums text-zinc-500">{p.pageviews}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="bg-white rounded-lg border border-zinc-200 p-4">
+          <div className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2.5">
+            Top 来源
+          </div>
+          <ul className="space-y-1.5">
+            {d.topReferrers.length === 0 && (
+              <li className="text-[12px] text-zinc-400">— 暂无数据 —</li>
+            )}
+            {d.topReferrers.map((r) => (
+              <li
+                key={r.referrer}
+                className="flex items-baseline justify-between gap-3 text-[13px]"
+              >
+                <span className="font-mono truncate text-zinc-700">
+                  {r.referrer}
+                </span>
+                <span className="tabular-nums text-zinc-500">{r.visitors}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <a
+        href={d.dashboardUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block text-[11px] font-mono text-zinc-400 hover:text-zinc-600 underline"
+      >
+        → Umami 完整看板
+      </a>
+    </div>
+  );
+}
+
+function SentryPanel({ sentry }: { sentry?: IntegrationsResponse["sentry"] }) {
+  if (!sentry || sentry.status !== "ok" || !sentry.data)
+    return <StatusPill status={sentry?.status} msg={sentry?.message} />;
+  const d = sentry.data;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Stat
+          label="24h 异常事件"
+          value={d.errorsLast24h.toLocaleString()}
+          sub={d.errorsLast24h === 0 ? "无报错 ✓" : "需关注"}
+        />
+        <Stat label="未解决 Issue" value={d.recentIssues.length} sub="最近 5 个" />
+        <Stat
+          label="受影响用户"
+          value={d.recentIssues.reduce((a, i) => a + i.userCount, 0)}
+        />
+      </div>
+      <div className="bg-white rounded-lg border border-zinc-200 p-4">
+        <div className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2.5">
+          最近未解决 Issues
+        </div>
+        {d.recentIssues.length === 0 ? (
+          <div className="text-[12px] text-zinc-400">— 暂无 issue —</div>
+        ) : (
+          <ul className="divide-y divide-zinc-100">
+            {d.recentIssues.map((i) => (
+              <li key={i.id} className="py-2.5 first:pt-0 last:pb-0">
+                <a
+                  href={i.permalink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group"
+                >
+                  <div className="text-[13.5px] font-medium text-zinc-900 group-hover:text-blue-600 truncate">
+                    {i.title}
+                  </div>
+                  {i.culprit && (
+                    <div className="text-[11.5px] font-mono text-zinc-500 truncate mt-0.5">
+                      {i.culprit}
+                    </div>
+                  )}
+                  <div className="flex gap-3 mt-1 text-[11px] font-mono text-zinc-400">
+                    <span>events: {i.count}</span>
+                    <span>users: {i.userCount}</span>
+                    <span>
+                      last: {new Date(i.lastSeen).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })}
+                    </span>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <a
+        href={d.dashboardUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block text-[11px] font-mono text-zinc-400 hover:text-zinc-600 underline"
+      >
+        → Sentry 完整看板
+      </a>
+    </div>
+  );
+}
+
+function ExternalLinksPanel({
+  links,
+}: {
+  links?: IntegrationsResponse["vercel"];
+}) {
+  const items = [
+    {
+      label: "Vercel Analytics",
+      desc: "PV / UV / 国家 / 设备 / 浏览器 · Vercel 自家面板",
+      href: links?.analytics,
+    },
+    {
+      label: "Speed Insights",
+      desc: "Core Web Vitals (LCP / FID / CLS) · 影响 Google 排名",
+      href: links?.speedInsights,
+    },
+    {
+      label: "Runtime Logs",
+      desc: "Vercel 实时函数日志 · debug 利器",
+      href: links?.logs,
+    },
+  ];
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {items.map((it) => (
+        <a
+          key={it.label}
+          href={it.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-white rounded-lg border border-zinc-200 p-4 hover:border-zinc-400 transition-colors"
+        >
+          <div className="text-[14px] font-semibold mb-1.5">{it.label} →</div>
+          <div className="text-[12px] text-zinc-500 leading-snug">{it.desc}</div>
+        </a>
+      ))}
+    </div>
   );
 }
 
@@ -111,6 +350,7 @@ function TrendChart({ data }: { data: { date: string; newUsers: number; newProje
 
 export default function AdminMetricsPage() {
   const [data, setData] = useState<MetricsResponse | null>(null);
+  const [integrations, setIntegrations] = useState<IntegrationsResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -118,19 +358,23 @@ export default function AdminMetricsPage() {
     setLoading(true);
     setErr(null);
     try {
-      const res = await fetch("/api/admin/metrics", { cache: "no-store" });
-      if (res.status === 401) {
+      const [coreRes, intRes] = await Promise.all([
+        fetch("/api/admin/metrics", { cache: "no-store" }),
+        fetch("/api/admin/metrics/integrations", { cache: "no-store" }),
+      ]);
+      if (coreRes.status === 401) {
         window.location.href = "/login?next=/admin/metrics";
         return;
       }
-      if (res.status === 403) {
+      if (coreRes.status === 403) {
         setErr("Forbidden — your account is not in ADMIN_EMAILS allowlist.");
         setLoading(false);
         return;
       }
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "请求失败");
-      setData(json);
+      const coreJson = await coreRes.json();
+      if (!coreRes.ok) throw new Error(coreJson.error || "请求失败");
+      setData(coreJson);
+      if (intRes.ok) setIntegrations(await intRes.json());
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -268,17 +512,29 @@ export default function AdminMetricsPage() {
           <TrendChart data={data.trend} />
         </Section>
 
-        <footer className="mt-12 pt-6 border-t border-zinc-200 text-[11px] font-mono text-zinc-400">
-          页面访问量（PV / UV）请前往{" "}
-          <a
-            href="https://vercel.com/taotang851-3495s-projects/guizang-ppt/analytics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-zinc-600"
-          >
-            Vercel Analytics
-          </a>{" "}
-          查看（独立看板）
+        {/* Web 流量（Umami） */}
+        <Section title="Web 流量 · 近 24h (Umami)">
+          <UmamiPanel umami={integrations?.umami} />
+        </Section>
+
+        {/* 错误监控（Sentry） */}
+        <Section title="错误监控 · 近 24h (Sentry)">
+          <SentryPanel sentry={integrations?.sentry} />
+        </Section>
+
+        {/* Vercel 外部看板入口（无公开 API） */}
+        <Section title="Vercel 看板（外链）">
+          <ExternalLinksPanel links={integrations?.vercel} />
+        </Section>
+
+        <footer className="mt-12 pt-6 border-t border-zinc-200 text-[11px] font-mono text-zinc-400 space-y-1">
+          <div>
+            内置业务指标 = 本服务 /api/admin/metrics（Supabase 聚合）
+          </div>
+          <div>
+            外部指标 = Umami（流量 / 来源） · Sentry（错误） · Vercel
+            Dashboard（Web Vitals / 流量 / 日志）
+          </div>
         </footer>
       </div>
     </div>

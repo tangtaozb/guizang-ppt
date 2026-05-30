@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { I18nProvider } from "@/components/i18n-provider";
+
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+const UMAMI_SCRIPT =
+  process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || "https://cloud.umami.is/script.js";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -109,6 +116,17 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <I18nProvider>{children}</I18nProvider>
+        {/* Vercel Analytics & Speed Insights：自动检测部署，无需 key */}
+        <Analytics />
+        <SpeedInsights />
+        {/* Umami：仅当 NEXT_PUBLIC_UMAMI_WEBSITE_ID 设置时启用 */}
+        {UMAMI_WEBSITE_ID && (
+          <Script
+            strategy="afterInteractive"
+            data-website-id={UMAMI_WEBSITE_ID}
+            src={UMAMI_SCRIPT}
+          />
+        )}
       </body>
     </html>
   );
