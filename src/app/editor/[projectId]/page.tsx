@@ -133,6 +133,7 @@ export default function EditorPage() {
   // to generate. This avoids a flash of the source-input view during dashboard→editor
   // navigation race conditions.
   const [showSourceInput, setShowSourceInput] = useState(false);
+  const [filesText, setFilesText] = useState("");
   const [isComposing, setIsComposing] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(isNew ? null : paramId);
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
@@ -299,7 +300,7 @@ export default function EditorPage() {
           currentHtml,
           chatHistory,
           theme,
-          sourceText,
+          sourceText: useEditorStore.getState().sourceText || sourceText,
         }),
         signal: ac.signal,
       });
@@ -435,13 +436,13 @@ export default function EditorPage() {
   };
 
   const handleGenerate = async () => {
-    if (!sourceText.trim()) return;
+    const combined = [sourceText.trim(), filesText.trim()].filter(Boolean).join("\n\n");
+    if (!combined) return;
+    setSourceText(combined);
     setShowSourceInput(false);
     // Delegate to handleSendMessage — Agent will route to generate_ppt
     const briefMsg =
-      sourceText.length > 100
-        ? sourceText.slice(0, 100) + "..."
-        : sourceText;
+      combined.length > 100 ? combined.slice(0, 100) + "..." : combined;
     handleSendMessage(briefMsg);
   };
 
@@ -599,14 +600,11 @@ export default function EditorPage() {
                 <FileUploadButton
                   variant="wide"
                   disabled={isGenerating}
-                  onText={(text, meta) => {
-                    const notice = meta.truncated ? `\n\n[${t("upload.truncatedNotice")}]` : "";
-                    setSourceText(text + notice);
-                  }}
+                  onFilesChange={setFilesText}
                 />
                 <button
                   onClick={handleGenerate}
-                  disabled={!sourceText.trim() || isGenerating}
+                  disabled={(!sourceText.trim() && !filesText.trim()) || isGenerating}
                   className="w-full py-2.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {isGenerating ? t("editor.generating") : t("editor.startGenerate")}

@@ -267,6 +267,7 @@ export default function DashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [inputText, setInputText] = useState("");
+  const [filesText, setFilesText] = useState("");
   const [selectedTheme, setSelectedTheme] = useState<ThemeId | "auto">("auto");
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -289,9 +290,10 @@ export default function DashboardPage() {
   };
 
   const handleSubmit = () => {
-    if (!inputText.trim()) return;
+    const combined = [inputText.trim(), filesText.trim()].filter(Boolean).join("\n\n");
+    if (!combined) return;
     reset();
-    setSourceText(inputText.trim());
+    setSourceText(combined);
     if (selectedTheme === "auto") {
       const allIds = THEMES.map((t) => t.id);
       const picked = allIds[Math.floor(Math.random() * allIds.length)];
@@ -322,7 +324,7 @@ export default function DashboardPage() {
 
   const displayProjects = projects.slice(0, 5);
   const hasMore = projects.length > 5;
-  const canSubmit = inputText.trim().length > 0;
+  const canSubmit = inputText.trim().length > 0 || filesText.trim().length > 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f3ee]">
@@ -468,10 +470,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <FileUploadButton
                   variant="compact"
-                  onText={(text, meta) => {
-                    const notice = meta.truncated ? `\n\n[${t("upload.truncatedNotice")}]` : "";
-                    setInputText(text + notice);
-                  }}
+                  onFilesChange={setFilesText}
                 />
                 <button
                   onClick={handleSubmit}
