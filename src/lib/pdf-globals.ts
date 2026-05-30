@@ -4,12 +4,14 @@
 // "ReferenceError: DOMMatrix is not defined" the instant the module is
 // evaluated.
 //
-// CRITICAL: this must run BEFORE pdfjs is evaluated. The bundler may hoist/eager
-// a route's dynamic import(), so installing the stubs inside the parse function
-// is too late in production. We therefore call this from instrumentation.ts
-// (runs at serverless cold-start, before any route code) AND defensively at the
-// top of the PDF parse path. Text extraction never invokes these methods, so
-// no-op stubs are sufficient (verified against real PDFs).
+// CRITICAL TIMING: the stubs must exist BEFORE pdfjs's module body evaluates.
+// This module installs them as a TOP-LEVEL SIDE EFFECT (runs on import). The PDF
+// path imports this module statically; ESM evaluates an imported module's body
+// before the importer's, and pdfjs itself is only pulled in via a later dynamic
+// import() — so by the time pdfjs evaluates, the globals are already present.
+//
+// Text extraction never invokes these methods, so no-op stubs are sufficient
+// (verified against real PDFs).
 
 export function installPdfGlobals(): void {
   const g = globalThis as Record<string, unknown>;
@@ -63,3 +65,6 @@ export function installPdfGlobals(): void {
     };
   }
 }
+
+// Top-level side effect: install immediately when this module is imported.
+installPdfGlobals();
