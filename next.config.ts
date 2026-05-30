@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   // dir into this route's serverless function.
   outputFileTracingIncludes: {
     "/api/upload/extract": ["./node_modules/pdfjs-dist/legacy/build/**"],
+    "/api/_diag_pdf": ["./node_modules/pdfjs-dist/legacy/build/**"],
   },
   async headers() {
     return [
