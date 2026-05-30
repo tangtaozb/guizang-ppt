@@ -3,7 +3,7 @@
 // environment. Delete after diagnosis.
 
 import { NextResponse } from "next/server";
-import { parseOfficeAsync } from "officeparser";
+import { extractText } from "@/lib/file-extract";
 import { existsSync, readdirSync } from "fs";
 import { join } from "path";
 
@@ -27,13 +27,15 @@ export async function GET() {
     diag.fsCheckError = e instanceof Error ? e.message : String(e);
   }
 
-  // 2. Actually try to parse a PDF.
+  // 2. Actually try to parse a PDF via the REAL extractText path.
   try {
     const buf = Buffer.from(TINY_PDF_B64, "base64");
-    const text = await parseOfficeAsync(buf);
+    const t0 = Date.now();
+    const { text, charCount } = await extractText(buf, "pdf");
     diag.parseOk = true;
-    diag.textLen = (text || "").length;
-    diag.textPreview = (text || "").slice(0, 80);
+    diag.parseMs = Date.now() - t0;
+    diag.textLen = charCount;
+    diag.textPreview = text.slice(0, 80);
   } catch (e) {
     diag.parseOk = false;
     diag.errorMessage = e instanceof Error ? e.message : String(e);

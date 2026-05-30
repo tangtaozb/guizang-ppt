@@ -112,74 +112,7 @@ function StatusPill({ status, msg }: { status?: ServiceStatus; msg?: string }) {
   );
 }
 
-function UmamiPanel({ umami }: { umami?: IntegrationsResponse["umami"] }) {
-  if (!umami || umami.status !== "ok" || !umami.data)
-    return <StatusPill status={umami?.status} msg={umami?.message} />;
-  const d = umami.data;
-  const bounceRate = d.visits > 0 ? ((d.bounces / d.visits) * 100).toFixed(1) : "0";
-  const avgTime =
-    d.visits > 0 ? `${Math.round(d.totaltime / d.visits)}s` : "0s";
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="PV (页面浏览)" value={d.pageviews.toLocaleString()} />
-        <Stat label="UV (独立访客)" value={d.visitors.toLocaleString()} />
-        <Stat label="跳出率" value={`${bounceRate}%`} />
-        <Stat label="平均停留" value={avgTime} />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="bg-white rounded-lg border border-zinc-200 p-4">
-          <div className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2.5">
-            Top 页面
-          </div>
-          <ul className="space-y-1.5">
-            {d.topPages.length === 0 && (
-              <li className="text-[12px] text-zinc-400">— 暂无数据 —</li>
-            )}
-            {d.topPages.map((p) => (
-              <li
-                key={p.url}
-                className="flex items-baseline justify-between gap-3 text-[13px]"
-              >
-                <span className="font-mono truncate text-zinc-700">{p.url}</span>
-                <span className="tabular-nums text-zinc-500">{p.pageviews}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="bg-white rounded-lg border border-zinc-200 p-4">
-          <div className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2.5">
-            Top 来源
-          </div>
-          <ul className="space-y-1.5">
-            {d.topReferrers.length === 0 && (
-              <li className="text-[12px] text-zinc-400">— 暂无数据 —</li>
-            )}
-            {d.topReferrers.map((r) => (
-              <li
-                key={r.referrer}
-                className="flex items-baseline justify-between gap-3 text-[13px]"
-              >
-                <span className="font-mono truncate text-zinc-700">
-                  {r.referrer}
-                </span>
-                <span className="tabular-nums text-zinc-500">{r.visitors}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      <a
-        href={d.dashboardUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-block text-[11px] font-mono text-zinc-400 hover:text-zinc-600 underline"
-      >
-        → Umami 完整看板
-      </a>
-    </div>
-  );
-}
+// Umami 面板已移除 —— 流量统一用 Google Analytics（见底部「流量 / 性能 / 日志看板」外链卡片）。
 
 function SentryPanel({ sentry }: { sentry?: IntegrationsResponse["sentry"] }) {
   if (!sentry || sentry.status !== "ok" || !sentry.data)
@@ -255,8 +188,13 @@ function ExternalLinksPanel({
 }) {
   const items = [
     {
+      label: "Google Analytics",
+      desc: "流量 / 来源 / 转化 / 地域 / 设备 · 主力流量看板 (G-ZZR9ERLEPM)",
+      href: "https://analytics.google.com/",
+    },
+    {
       label: "Vercel Analytics",
-      desc: "PV / UV / 国家 / 设备 / 浏览器 · Vercel 自家面板",
+      desc: "PV / UV / 国家 / 设备 / 浏览器 · Vercel 自家面板（自动开启）",
       href: links?.analytics,
     },
     {
@@ -512,18 +450,13 @@ export default function AdminMetricsPage() {
           <TrendChart data={data.trend} />
         </Section>
 
-        {/* Web 流量（Umami） */}
-        <Section title="Web 流量 · 近 24h (Umami)">
-          <UmamiPanel umami={integrations?.umami} />
-        </Section>
-
         {/* 错误监控（Sentry） */}
         <Section title="错误监控 · 近 24h (Sentry)">
           <SentryPanel sentry={integrations?.sentry} />
         </Section>
 
-        {/* Vercel 外部看板入口（无公开 API） */}
-        <Section title="Vercel 看板（外链）">
+        {/* 流量 / 性能 / 日志：外部看板入口（GA + Vercel，无公开 read API） */}
+        <Section title="流量 / 性能 / 日志看板（外链）">
           <ExternalLinksPanel links={integrations?.vercel} />
         </Section>
 

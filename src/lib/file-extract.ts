@@ -1,10 +1,24 @@
 // Server-side document parsing for user-uploaded source material.
-// officeparser v5 handles docx + pptx + pdf via parseOfficeAsync().
+//
+// - docx / pptx → officeparser (yauzl + xmldom, works fine on serverless)
+// - pdf         → pdfjs-dist directly, with the worker pinned to the bundled
+//                 file and run on the main thread.
+//
+// Why PDF is special: officeparser delegates PDFs to pdfjs but never sets
+// GlobalWorkerOptions.workerSrc. On Vercel's serverless runtime pdfjs then tries
+// to spin up a real worker, which never initializes → getDocument() hangs →
+// FUNCTION_INVOCATION_TIMEOUT (504). We bypass that by loading pdfjs ourselves
+// and pointing workerSrc at the real pdf.worker.mjs (bundled via
+// outputFileTracingIncludes in next.config.ts), so pdfjs runs as a "fake worker"
+// on the main thread — no thread spawn, serverless-safe.
 //
 // Node runtime only — depends on Node Buffer / zlib.
 
 import { parseOfficeAsync } from "officeparser";
+import { createRequire } from "module";
 import { tmpdir } from "os";
+
+const require = createRequire(import.meta.url);
 
 export type FileKind = "docx" | "pptx" | "pdf";
 export const ACCEPTED_EXTS: FileKind[] = ["docx", "pptx", "pdf"];
@@ -34,24 +48,75 @@ export function inferKind(fileName: string, mime: string | undefined): FileKind 
 }
 
 /**
+ * Extract plain text from a PDF using pdfjs-dist directly, with the worker
+ * disabled (run on the main thread). This is the serverless-safe path —
+ * see the file header for why officeparser's built-in PDF handling hangs.
+ */
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // Pin workerSrc to the real worker file so pdfjs loads it as a fake worker on
+  // the main thread instead of spawning a real one (which hangs on serverless).
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+    pdfjs.GlobalWorkerOptions.workerSrc = require.resolve(
+      "pdfjs-dist/legacy/build/pdf.worker.mjs"
+    );
+  }
+
+  const doc = await pdfjs.getDocument({
+    data: new Uint8Array(buffer),
+    isEvalSupported: false,
+    useSystemFonts: true,
+    // Don't fetch external standard-font data over the network in serverless.
+    disableFontFace: true,
+  }).promise;
+
+  const parts: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    let lastY: number | undefined;
+    let line = "";
+    for (const item of content.items) {
+      if (!("str" in item)) continue;
+      const y = item.transform[5];
+      if (lastY !== undefined && y !== lastY) {
+        parts.push(line);
+        line = "";
+      }
+      line += item.str;
+      lastY = y;
+    }
+    if (line) parts.push(line);
+    parts.push(""); // page break
+  }
+  await doc.cleanup().catch(() => {});
+  return parts.join("\n");
+}
+
+/**
  * Parse a buffered document into plain text. Throws on parse errors so the
  * caller can surface a friendly message.
  *
- * officeparser v5's published TS types omit `tempFilesLocation`, but the
- * runtime still honors it. We pass it through a loosely-typed config so that —
- * if this build writes temp files during unzip — they land in /tmp (Vercel's
- * only writable dir) rather than the read-only serverless cwd. If v5 uses
- * in-memory unzip, the option is simply ignored.
+ * PDFs go through pdfjs directly (worker-pinned, main-thread). docx/pptx go
+ * through officeparser. officeparser v5's published TS types omit
+ * `tempFilesLocation`, but the runtime still honors it — we pass it through a
+ * loosely-typed config so any temp files land in /tmp (Vercel's only writable
+ * dir) rather than the read-only serverless cwd.
  */
 export async function extractText(
   buffer: Buffer,
-  _kind: FileKind
+  kind: FileKind
 ): Promise<{ text: string; charCount: number }> {
-  const cfg = { tempFilesLocation: tmpdir() } as unknown as Parameters<
-    typeof parseOfficeAsync
-  >[1];
-  const raw = await parseOfficeAsync(buffer, cfg);
-  const text = (raw || "").trim();
+  let text: string;
+  if (kind === "pdf") {
+    text = (await extractPdfText(buffer)).trim();
+  } else {
+    const cfg = { tempFilesLocation: tmpdir() } as unknown as Parameters<
+      typeof parseOfficeAsync
+    >[1];
+    const raw = await parseOfficeAsync(buffer, cfg);
+    text = (raw || "").trim();
+  }
   return { text, charCount: text.length };
 }
 
