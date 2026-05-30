@@ -36,13 +36,12 @@ export async function getCreditBalance(userId: string): Promise<number> {
 }
 
 /**
- * Atomically deduct credits.
+ * Atomically deduct credits via optimistic-concurrency conditional UPDATE.
  *
- * Uses a conditional UPDATE — PostgreSQL guarantees row-level locking,
- * so concurrent requests don't double-spend. If credits < amount, the
- * UPDATE matches no rows and we return { ok: false, error: "insufficient" }.
- *
- * Also inserts a credit_records row for accounting.
+ * The `.eq("credits", current)` clause ensures the row only updates if the
+ * balance still matches what we read — PostgreSQL row locking prevents two
+ * concurrent requests from both succeeding (double-spend). On a lost race the
+ * UPDATE matches no row and we report insufficient so the caller can reject.
  */
 export async function chargeCredits(opts: {
   userId: string;
@@ -51,95 +50,56 @@ export async function chargeCredits(opts: {
   description: string;
   projectTitle?: string;
 }): Promise<ChargeResult> {
-  if (opts.amount <= 0) {
-    // No-op for free actions — still want a balance read for the response.
-    const remaining = await getCreditBalance(opts.userId);
+  const userId = opts.userId;
+  const amount = opts.amount;
+  const type = opts.type;
+  const description = opts.description;
+  const projectTitle = opts.projectTitle || "";
+
+  // Free actions: no charge, just report balance.
+  if (amount <= 0) {
+    const remaining = await getCreditBalance(userId);
     return { ok: true, remaining };
   }
 
-  // Atomic decrement: only succeed if current credits >= amount.
-  const { data: rows, error: updateErr } = await supabase
-    .rpc("decrement_credits_if_enough", {
-      p_user_id: opts.userId,
-      p_amount: opts.amount,
-    });
-
-  // Fallback path if the RPC isn't installed: read-then-update with
-  // optimistic concurrency. Race window is small in practice.
-  if (updateErr) {
-    return chargeCreditsOptimistic(opts);
-  }
-
-  // RPC returns the new balance as a single row, or null if insufficient.
-  const newCredits = Array.isArray(rows) && rows.length > 0 ? Number(rows[0].new_credits ?? rows[0]) : null;
-  if (newCredits === null || newCredits === undefined) {
-    const current = await getCreditBalance(opts.userId);
-    return { ok: false, remaining: current, error: "insufficient" };
-  }
-
-  // Insert credit history (fire-and-forget — accounting only)
-  supabase
-    .from("credit_records")
-    .insert({
-      user_id: opts.userId,
-      type: opts.type,
-      amount: -opts.amount,
-      description: opts.description,
-      project_title: opts.projectTitle || "",
-    })
-    .then(() => undefined, () => undefined);
-
-  return { ok: true, remaining: newCredits };
-}
-
-/**
- * Fallback: read-then-update charge. Used when the RPC isn't installed.
- * Race window: between SELECT and UPDATE another request could spend.
- * Mitigated by re-reading after UPDATE and rejecting if it went negative.
- */
-async function chargeCreditsOptimistic(opts: {
-  userId: string;
-  amount: number;
-  type: "generate" | "edit" | "purchase";
-  description: string;
-  projectTitle?: string;
-}): Promise<ChargeResult> {
+  // 1. Read current balance.
   const { data: profile, error: readErr } = await supabase
     .from("profiles")
     .select("credits")
-    .eq("id", opts.userId)
+    .eq("id", userId)
     .single();
+  if (readErr || !profile) {
+    return { ok: false, remaining: 0, error: "not_found" };
+  }
 
-  if (readErr || !profile) return { ok: false, remaining: 0, error: "not_found" };
   const current = Number(profile.credits || 0);
-  if (current < opts.amount) return { ok: false, remaining: current, error: "insufficient" };
+  if (current < amount) {
+    return { ok: false, remaining: current, error: "insufficient" };
+  }
 
-  const target = current - opts.amount;
-  // Conditional UPDATE: only proceed if balance still matches what we read.
+  // 2. Conditional UPDATE — only succeeds if balance is unchanged.
   const { data: updated, error: updErr } = await supabase
     .from("profiles")
-    .update({ credits: target })
-    .eq("id", opts.userId)
-    .eq("credits", current) // optimistic concurrency
+    .update({ credits: current - amount })
+    .eq("id", userId)
+    .eq("credits", current)
     .select("credits")
     .single();
 
   if (updErr || !updated) {
-    // Lost the race — caller can retry. Return current balance.
-    const fresh = await getCreditBalance(opts.userId);
+    // Lost the race or row vanished — re-read and reject.
+    const fresh = await getCreditBalance(userId);
     return { ok: false, remaining: fresh, error: "insufficient" };
   }
 
-  supabase
-    .from("credit_records")
-    .insert({
-      user_id: opts.userId,
-      type: opts.type,
-      amount: -opts.amount,
-      description: opts.description,
-      project_title: opts.projectTitle || "",
-    })
-    .then(() => undefined, () => undefined);
+  // 3. Record the deduction for the user's credit history.
+  await supabase.from("credit_records").insert({
+    user_id: userId,
+    type,
+    amount: -amount,
+    description,
+    project_title: projectTitle,
+  });
 
   return { ok: true, remaining: Number(updated.credits || 0) };
 }
@@ -152,20 +112,25 @@ export async function refundCredits(opts: {
   amount: number;
   reason: string;
 }): Promise<void> {
-  if (opts.amount <= 0) return;
+  const userId = opts.userId;
+  const amount = opts.amount;
+  const reason = opts.reason;
+  if (amount <= 0) return;
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("credits")
-    .eq("id", opts.userId)
+    .eq("id", userId)
     .single();
   if (!profile) return;
-  const newCredits = Number(profile.credits || 0) + opts.amount;
-  await supabase.from("profiles").update({ credits: newCredits }).eq("id", opts.userId);
+
+  const newCredits = Number(profile.credits || 0) + amount;
+  await supabase.from("profiles").update({ credits: newCredits }).eq("id", userId);
   await supabase.from("credit_records").insert({
-    user_id: opts.userId,
-    type: "purchase", // counted as refund/credit-back
-    amount: opts.amount,
-    description: opts.reason,
+    user_id: userId,
+    type: "purchase", // counted as refund / credit-back
+    amount: amount,
+    description: reason,
     project_title: "",
   });
 }

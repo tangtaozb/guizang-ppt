@@ -1,10 +1,10 @@
 // Server-side document parsing for user-uploaded source material.
-// One library (officeparser v7) handles docx + pptx + pdf via a unified
-// `parseOffice()` entrypoint that returns an AST with `.toText()`.
+// officeparser v5 handles docx + pptx + pdf via parseOfficeAsync().
 //
 // Node runtime only — depends on Node Buffer / zlib.
 
-import { parseOffice } from "officeparser";
+import { parseOfficeAsync } from "officeparser";
+import { tmpdir } from "os";
 
 export type FileKind = "docx" | "pptx" | "pdf";
 export const ACCEPTED_EXTS: FileKind[] = ["docx", "pptx", "pdf"];
@@ -36,15 +36,22 @@ export function inferKind(fileName: string, mime: string | undefined): FileKind 
 /**
  * Parse a buffered document into plain text. Throws on parse errors so the
  * caller can surface a friendly message.
+ *
+ * officeparser v5's published TS types omit `tempFilesLocation`, but the
+ * runtime still honors it. We pass it through a loosely-typed config so that —
+ * if this build writes temp files during unzip — they land in /tmp (Vercel's
+ * only writable dir) rather than the read-only serverless cwd. If v5 uses
+ * in-memory unzip, the option is simply ignored.
  */
 export async function extractText(
   buffer: Buffer,
   _kind: FileKind
 ): Promise<{ text: string; charCount: number }> {
-  // officeparser auto-detects format from buffer content. Passing `_kind` is
-  // currently informational only — kept for future per-format options.
-  const ast = await parseOffice(buffer);
-  const text = (ast?.toText?.() ?? "").trim();
+  const cfg = { tempFilesLocation: tmpdir() } as unknown as Parameters<
+    typeof parseOfficeAsync
+  >[1];
+  const raw = await parseOfficeAsync(buffer, cfg);
+  const text = (raw || "").trim();
   return { text, charCount: text.length };
 }
 
