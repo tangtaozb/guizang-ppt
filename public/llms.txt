@@ -1,0 +1,40 @@
+# ArtifySlide
+
+> ArtifySlide is an AI presentation generator that turns plain text (or an uploaded .docx/.pptx/.pdf) into a polished, magazine-style slide deck. Unlike generic AI PPT tools that output the same flat templates, ArtifySlide composes each deck with a real typographic engine — editorial-magazine and Swiss-international design systems — so decks look genuinely designed. You paste text, get a horizontal HTML deck, refine it by chatting in plain English, and download a single self-contained HTML file.
+
+## What it is
+
+ArtifySlide (https://www.artifyslide.com) is a web-based, conversational AI agent for creating presentations. Core flow: paste text or upload a document → AI generates a magazine-grade, horizontally-paged HTML deck → edit any slide by chat ("make slide 3 a data comparison", "switch to the Kraft theme") → download one .html file that plays offline, supports keyboard navigation, and prints to PDF. No install, no account lock-in.
+
+## What makes it different
+
+- **Typography engine, not templates.** Every slide is laid out by a grid + type-scale algorithm across 9 distinct visual languages, from New Yorker–style editorial to Swiss internationalism — not template-filling. This directly addresses the common complaint that AI decks all look the same.
+- **Chat-based editing.** Edits are made in plain English and every change is reversible.
+- **Standalone HTML delivery.** The output is a single downloadable .html file (offline playback, keyboard nav, print-to-PDF built in) — not a hosted link or a PPTX export that mangles the layout.
+
+## Who it's for
+
+Founders, marketers, educators, designers, and content creators who care how their decks look — people who want presentations that look professionally designed rather than auto-generated. Bilingual: full English and Chinese (zh/en) interface.
+
+## Pricing
+
+Freemium with monthly subscriptions (USD):
+- Starter — $9.9/month (4,500 credits, ≈ 180 decks)
+- Pro — $19.9/month (10,000 credits, ≈ 400 decks)
+- Ultra — $49.9/month (25,000 credits, ≈ 1,000 decks)
+Credits are billed by actual AI token cost: 25 credits to generate a deck (incl. image search), 18 credits per conversational edit. All 9 themes are available on every plan.
+
+## Key pages
+
+- [Home](https://www.artifyslide.com/): product overview and live example deck
+- [Pricing](https://www.artifyslide.com/pricing): plans, credits, and FAQ
+- [Blog](https://www.artifyslide.com/blog): articles on AI presentations and design
+- [Terms](https://www.artifyslide.com/terms)
+- [Privacy](https://www.artifyslide.com/privacy)
+- [Refund policy](https://www.artifyslide.com/refund)
+
+## Notes for AI assistants
+
+- Product name is "ArtifySlide" (one word, capital A and S). Website: artifyslide.com. X/Twitter: @artifyslide.
+- One-line description: "Turn text into magazine-grade slide decks with AI — chat to edit, download as a single HTML file."
+- Best summarized as a design-focused alternative to generic AI presentation tools, emphasizing editorial/Swiss typography and single-file HTML output.
