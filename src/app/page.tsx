@@ -16,6 +16,13 @@ import {
   websiteSchema,
 } from "@/components/seo/json-ld";
 
+// 已有真实示例 deck 的主题 → 对应的可点击公开 deck
+const DECK_BY_THEME: Record<string, string> = {
+  "ink-classic": "/examples/meridian-coffee.html",
+  indigo: "/examples/atlas-tech.html",
+  dune: "/examples/studio-design.html",
+};
+
 export default function LandingPage() {
   const { t } = useTranslation();
   const [user, setUser] = useState<DbUserProfile | null>(null);
@@ -35,7 +42,7 @@ export default function LandingPage() {
 
       {/* ====== Hero ====== */}
       <section className="mx-auto max-w-[1440px] px-6 sm:px-14 pt-16 sm:pt-24 pb-20 sm:pb-24">
-        <div className="grid items-center gap-12 lg:grid-cols-[1fr_minmax(0,540px)] lg:gap-16">
+        <div className="grid items-center gap-12 lg:grid-cols-[1fr_minmax(0,600px)] lg:gap-14">
           {/* 左：文案 */}
           <div>
             <div
@@ -102,23 +109,58 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {THEMES.map((th, i) => (
-            <Reveal key={th.id} delay={(i % 3) * 80} className="flex flex-col gap-2.5">
-              <div className="w-full">
-                <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
-                  <div className="absolute inset-0">
-                    <ThemeThumb theme={th} width={428} />
+          {THEMES.map((th, i) => {
+            const deckHref = DECK_BY_THEME[th.id];
+            const card = (
+              <>
+                <div className="w-full">
+                  <div
+                    className="relative w-full overflow-hidden rounded-[3px]"
+                    style={{ aspectRatio: "16 / 9" }}
+                  >
+                    <div className="absolute inset-0">
+                      <ThemeThumb theme={th} width={428} />
+                    </div>
+                    {deckHref && (
+                      <>
+                        <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-accent px-2 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-white">
+                          <span aria-hidden>▶</span> {t("heroSpec.badge")}
+                        </div>
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
+                          <span className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-medium text-foreground">
+                            <span aria-hidden>▶</span> {t("heroSpec.cta")}{" "}
+                            <span aria-hidden>→</span>
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
-              </div>
-              <div className="flex items-baseline justify-between pt-1">
-                <span className="text-[14px]">{th.zh}</span>
-                <span className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-muted-foreground">
-                  {th.en}
-                </span>
-              </div>
-            </Reveal>
-          ))}
+                <div className="flex items-baseline justify-between pt-1">
+                  <span className="text-[14px]">{th.zh}</span>
+                  <span className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-muted-foreground">
+                    {th.en}
+                  </span>
+                </div>
+              </>
+            );
+            return (
+              <Reveal key={th.id} delay={(i % 3) * 80} className="flex flex-col gap-2.5">
+                {deckHref ? (
+                  <a
+                    href={deckHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group/card flex flex-col gap-2.5 cursor-pointer"
+                  >
+                    {card}
+                  </a>
+                ) : (
+                  card
+                )}
+              </Reveal>
+            );
+          })}
         </div>
       </section>
 

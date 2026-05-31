@@ -365,4 +365,14 @@ export const en: Dict = {
     altToZh: "阅读中文版 →",
     altToEn: "Read in English →",
   },
+  heroSpec: {
+    badge: "Live example",
+    kicker: "COVER STORY · MERIDIAN",
+    title: "Origin, uncut.",
+    subtitle: "Premium magazine-style decks · AI agent",
+    themeName: "Ink Classic",
+    cta: "View live example",
+    watermark: "M",
+    seal: "AS",
+  },
 };

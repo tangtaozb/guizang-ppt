@@ -365,6 +365,16 @@ export const zh = {
     altToZh: "阅读中文版 →",
     altToEn: "Read in English →",
   },
+  heroSpec: {
+    badge: "可交互示例",
+    kicker: "封面特辑 · COVER STORY",
+    title: "纸上烟霞",
+    subtitle: "高级杂志风格 PPT，AI Agent",
+    themeName: "墨韵经典",
+    cta: "查看完整示例",
+    watermark: "墨",
+    seal: "辑",
+  },
 };
 
 export type Dict = typeof zh;
