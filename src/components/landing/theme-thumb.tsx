@@ -193,7 +193,8 @@ function ThumbLayout({
   const serif = { fontFamily: t.serif, fontWeight: 500, letterSpacing: "-0.01em" };
   const v = t.variant;
   const dim = (a: number) => hexA(t.fg, a);
-  const Head = ({ right }: { right?: string }) => (
+  // 普通渲染函数（非组件）—— 避免「render 中创建组件」反模式
+  const head = (right?: string) => (
     <div className="flex items-baseline justify-between" style={{ ...mono, fontSize: px(8), color: dim(0.6) }}>
       <span>{s.kicker}</span>
       <span style={{ color: right === "accent" ? t.accent : dim(0.5) }}>{s.meta} · {no}</span>
@@ -205,7 +206,7 @@ function ThumbLayout({
     const cells = METRICS.lemon!;
     return (
       <div className="absolute inset-0 flex flex-col" style={{ padding: px(18) }}>
-        <Head right="accent" />
+        {head("accent")}
         <div style={{ ...serif, fontSize: px(26), lineHeight: 1.0, margin: `${px(10)} 0 ${px(12)}` }}>{s.title}</div>
         <div className="grid flex-1" style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: `${px(10)} ${px(12)}` }}>
           {cells.map((c, i) => {
@@ -228,7 +229,7 @@ function ThumbLayout({
     const rows = TOC["ink-classic"]!;
     return (
       <div className="absolute inset-0 flex flex-col" style={{ padding: px(20) }}>
-        <Head />
+        {head()}
         <div style={{ ...serif, fontSize: px(28), lineHeight: 1.0, margin: `${px(10)} 0 ${px(12)}` }}>{s.title}</div>
         <div className="flex-1 flex flex-col" style={{ gap: px(7) }}>
           {rows.map((r, i) => {
@@ -300,7 +301,7 @@ function ThumbLayout({
     return (
       <div className="absolute inset-0 flex flex-col" style={{ padding: px(20) }}>
         <div style={{ height: px(3), width: px(46), background: t.accent }} />
-        <div style={{ marginTop: px(11) }}><Head /></div>
+        <div style={{ marginTop: px(11) }}>{head()}</div>
         <div className="flex-1 flex items-center">
           <div>
             <span style={{ fontFamily: t.serif, fontSize: px(34), color: t.accent, lineHeight: 0.6, display: "block" }}>&ldquo;</span>
@@ -320,7 +321,7 @@ function ThumbLayout({
     const nodes = locale === "zh" ? ["播种", "生长", "风蚀", "成形"] : ["Seed", "Grow", "Erode", "Form"];
     return (
       <div className="absolute inset-0 flex flex-col" style={{ padding: px(20) }}>
-        <Head />
+        {head()}
         <div className="flex-1 flex items-end" style={{ paddingBottom: px(12) }}>
           <div style={{ ...serif, fontSize: px(26), lineHeight: 1.04 }}>{s.title}</div>
         </div>
@@ -347,7 +348,7 @@ function ThumbLayout({
           <span style={{ writingMode: "vertical-rl", color: t.paper, fontFamily: FONT_MONO, fontSize: px(7.5), letterSpacing: "0.22em", textTransform: "uppercase" }}>{t.en}</span>
         </div>
         <div className="flex-1 flex flex-col" style={{ padding: px(16) }}>
-          <Head />
+          {head()}
           <div style={{ ...serif, fontSize: px(24), lineHeight: 1.02, margin: `${px(8)} 0 ${px(10)}` }}>{s.title}</div>
           <div className="flex flex-wrap" style={{ gap: px(6) }}>
             {tags.map((tg, i) => (
