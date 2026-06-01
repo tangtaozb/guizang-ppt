@@ -20,6 +20,11 @@ const GA_MEASUREMENT_ID = IS_PROD
   ? (process.env.NEXT_PUBLIC_GA_ID ?? "G-ZZR9ERLEPM")
   : "";
 
+// Microsoft Clarity（会话录制 + 热图）— 同样仅生产启用，避免预览流量污染数据。
+const CLARITY_PROJECT_ID = IS_PROD
+  ? (process.env.NEXT_PUBLIC_CLARITY_ID ?? "x00drlftki")
+  : "";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -154,6 +159,16 @@ gtag('js', new Date());
 gtag('config', '${GA_MEASUREMENT_ID}');`}
             </Script>
           </>
+        )}
+        {/* Microsoft Clarity：会话录制 + 热图 — next/script afterInteractive 注入。 */}
+        {CLARITY_PROJECT_ID && (
+          <Script id="ms-clarity" strategy="afterInteractive">
+            {`(function(c,l,a,r,i,t,y){
+c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "${CLARITY_PROJECT_ID}");`}
+          </Script>
         )}
       </body>
     </html>
