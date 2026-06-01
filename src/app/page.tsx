@@ -24,7 +24,7 @@ const DECK_BY_THEME: Record<string, string> = {
 };
 
 export default function LandingPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [user, setUser] = useState<DbUserProfile | null>(null);
 
   useEffect(() => {
@@ -137,9 +137,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between pt-1">
-                  <span className="text-[14px]">{th.zh}</span>
+                  <span className="text-[14px]">{locale === "en" ? th.en : th.zh}</span>
                   <span className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-muted-foreground">
-                    {th.en}
+                    {locale === "en" ? th.zh : th.en}
                   </span>
                 </div>
               </>

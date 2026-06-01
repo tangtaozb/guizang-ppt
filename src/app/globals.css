@@ -146,10 +146,20 @@ body {
   animation-delay: 1s;
 }
 
+/* hero 轮播切换时的淡入（key 变化触发重挂载 → 重播） */
+@keyframes as-fade {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+.as-fade {
+  animation: as-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .as-rise,
   .as-reveal,
-  .as-float {
+  .as-float,
+  .as-fade {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
